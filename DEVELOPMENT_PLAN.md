@@ -397,7 +397,7 @@ Git管理数据版本    数据录入后台          CMS系统
 |------|------|------|
 | 活动详情面板 (点击展开) | EventDetail + 高亮联动 | ✅ 已完成 |
 | 周视图 & 日视图 | 视图切换组件 | ⬜ 待实现 |
-| 创建 GitHub 仓库 | 仓库 + 分支保护 + Labels | ⬜ 待实现 |
+| 创建 GitHub 仓库 | main + develop 分支已推送 | ✅ 已完成 |
 | GitHub Actions CI/CD | lint + test + build 自动流水线 | ⬜ 待实现 |
 | 部署到 Vercel | 线上可访问 | ⬜ 待实现 |
 
@@ -755,7 +755,7 @@ git branch -d feature/calendar-grid
 
 在 Sprint 0 中需要完成的配置项：
 
-- [ ] 创建 GitHub 仓库 `HoyoCalendar`
+- [x] 创建 GitHub 仓库 `HoyoCalendar`
 - [ ] 设置分支保护规则（`main` 和 `develop` 禁止直接 push）
 - [ ] 启用 GitHub Actions
 - [ ] 创建 Project Board（Kanban）
@@ -777,7 +777,7 @@ git branch -d feature/calendar-grid
 | 开发规范 (13.x) | ✅ 已确认 |
 | Sprint 0 — 项目初始化 | ✅ 完成 (2026-07-29) |
 | Sprint 1 — 日历核心组件 | ✅ 完成 (2026-07-29, 13/13) |
-| Sprint 2 — 额外视图 & 上线部署 | 🚀 进行中 (1/5 已完成) |
+| Sprint 2 — 额外视图 & 上线部署 | 🚀 进行中 (2/5 已完成) |
 | Sprint 3 — 数据工具 | 📋 已规划 |
 | 当前分支 | `develop` |
 | 下一步 | 周/日视图 / 创建仓库 / CI / 部署 Vercel |
