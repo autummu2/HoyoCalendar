@@ -355,34 +355,34 @@ Git管理数据版本    数据录入后台          CMS系统
 | 初始化 Git 仓库 + develop 分支 | 版本控制 | ✅ |
 | 创建 GitHub 仓库 / CI / 部署 | — | ⬜ 待推送 |
 
-#### 🚀 Sprint 1 — 日历核心组件 (第2-3周) — 进行中
+#### ✅ Sprint 1 — 日历核心组件 (第2-3周) — 完成于 2026-07-29
 
 | 任务 | 产出 | 状态 |
 |------|------|------|
-| 月视图日历网格组件 | CalendarGrid + 三层架构 | ✅ 已完成 |
-| Paimon.moe 风格连续色条 | event-layout.ts 分段引擎 | ✅ 已完成 |
-| 活动个性化颜色 + 图片背景 | color / bar_bg_image 字段 | ✅ 已完成 |
-| 浅色色条 + 深色文字配色 | Tailwind 50/100 色阶 | ✅ 已完成 |
-| 色条点击 → 详情面板高亮 | onSelectEvent + highlightedEventId | ✅ 已完成 |
-| 月份导航 (上/下月, 回到今天) | Header 组件 | ✅ 已完成 |
-| 活动数据加载与解析 | DataLoader + Zod 校验 | ✅ 已完成 |
-| 今日高亮 + 活动日期标记 | today ring + 选中态 | ✅ 已完成 |
-| 暗色/亮色主题切换 | useTheme + CSS变量 | ✅ 已完成 |
-| YAML 数据文件接入 (替换硬编码) | Vite glob import | ⬜ 待实现 |
-| 游戏筛选器 | GameFilter | ⬜ 待实现 |
-| 活动类型筛选器 | TypeFilter | ⬜ 待实现 |
-| 单元测试 | Vitest | ⬜ 待实现 |
+| 月视图日历网格组件 | CalendarGrid + 三层架构 | ✅ |
+| Paimon.moe 风格连续色条 | event-layout.ts 分段引擎 | ✅ |
+| 活动个性化颜色 + 图片背景 | color / bar_bg_image 字段 | ✅ |
+| 浅色色条 + 深色文字配色 | Tailwind 50/100 色阶 | ✅ |
+| 色条点击 → 详情面板高亮 | onSelectEvent + highlightedEventId | ✅ |
+| 月份导航 (上/下月, 回到今天) | Header 组件 | ✅ |
+| 活动数据加载与解析 | DataLoader + Zod 校验 | ✅ |
+| 今日高亮 + 活动日期标记 | today ring + 选中态 | ✅ |
+| 暗色/亮色主题切换 | useTheme + CSS变量 | ✅ |
+| YAML 数据文件接入 (替换硬编码) | Vite glob import + js-yaml | ✅ |
+| 游戏筛选器 | GameFilter 横向按钮组 | ✅ |
+| 活动类型筛选器 | TypeFilter 图标标签按钮组 | ✅ |
+| 单元测试 | date-utils + event-layout / 26 tests | ✅ |
 
-#### 🚀 Sprint 2 — 活动详情 & 筛选 (第4周)
+#### 🚀 Sprint 2 — 交互增强 & 部署 (第4周)
 
 | 任务 | 产出 | 状态 |
 |------|------|------|
 | 活动详情面板 (点击展开) | EventDetail + 高亮联动 | ✅ 已完成 |
-| 游戏筛选器 | GameFilter | ⬜ 待实现 |
-| 活动类型筛选器 | TypeFilter | ⬜ 待实现 |
 | 周视图 & 日视图 | — | ⬜ 待实现 |
+| 活动倒计时 | — | ⬜ 待实现 |
+| ICS 导出 (添加到系统日历) | — | ⬜ 待实现 |
 | 部署到 Vercel/GitHub Pages | 线上预览 | ⬜ 待实现 |
-| MVP 验收测试 | E2E测试 | ⬜ 待实现 |
+| E2E 验收测试 | Playwright | ⬜ 待实现 |
 
 ---
 
@@ -750,10 +750,10 @@ git branch -d feature/calendar-grid
 | 补充确认 (12.x) | ✅ 全部采纳建议 |
 | 开发规范 (13.x) | ✅ 已确认 |
 | Sprint 0 — 项目初始化 | ✅ 完成 (2026-07-29) |
-| Sprint 1 — 日历核心组件 | 🚀 进行中 (10/14 已完成) |
-| 当前分支 | `feature/event-bar-enhance` |
-| 已提交 | 6 commits |
-| 下一步 | YAML数据接入 / 筛选器组件 / 推送到 GitHub |
+| Sprint 1 — 日历核心组件 | ✅ 完成 (2026-07-29, 13/13) |
+| Sprint 2 — 交互增强 & 部署 | 🚀 进行中 (1/6 已完成) |
+| 当前分支 | `develop` |
+| 下一步 | 周/日视图 / 倒计时 / 部署到 Vercel |
 
 ---
 
