@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
 import { buildCalendarGrid, getToday } from './lib/date-utils'
@@ -6,6 +6,9 @@ import { isDateInRange } from './lib/date-utils'
 import { Header } from './components/layout/Header'
 import { CalendarGrid } from './components/calendar/CalendarGrid'
 import { EventDetail } from './components/event/EventDetail'
+import { GameFilter } from './components/filter/GameFilter'
+import { TypeFilter } from './components/filter/TypeFilter'
+import type { Game, EventTypeId } from './types/events'
 
 export default function App() {
   // ===== 主题 =====
@@ -17,8 +20,21 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
 
+  // ===== 筛选状态 =====
+  const [gameFilter, setGameFilter] = useState<Game[]>([])
+  const [typeFilter, setTypeFilter] = useState<EventTypeId[]>([])
+
   // ===== 活动数据 =====
   const { events, loading, error } = useEvents()
+
+  // ===== 筛选后的活动 =====
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (gameFilter.length > 0 && !gameFilter.includes(e.game)) return false
+      if (typeFilter.length > 0 && !typeFilter.includes(e.type)) return false
+      return true
+    })
+  }, [events, gameFilter, typeFilter])
 
   // ===== 日历网格 =====
   const weeks = buildCalendarGrid(currentYear, currentMonth)
@@ -51,18 +67,17 @@ export default function App() {
 
   // ===== 选中日期的活动 =====
   const selectedEvents = selectedDate
-    ? events.filter((e) => isDateInRange(selectedDate, e.start_date, e.end_date))
+    ? filteredEvents.filter((e) => isDateInRange(selectedDate, e.start_date, e.end_date))
     : []
 
-  // ===== 日期/活动选择 =====
   const handleSelectDate = useCallback((date: string) => {
     setSelectedDate(date)
-    setHighlightedEventId(null) // 点日期格子 → 不高亮特定活动
+    setHighlightedEventId(null)
   }, [])
 
   const handleSelectEvent = useCallback((date: string, eventId: string) => {
     setSelectedDate(date)
-    setHighlightedEventId(eventId) // 点色条 → 高亮该活动
+    setHighlightedEventId(eventId)
   }, [])
 
   // ===== 错误状态 =====
@@ -86,6 +101,15 @@ export default function App() {
         onToday={goToToday}
       />
 
+      {/* ===== 筛选栏 ===== */}
+      <div
+        className="flex items-center gap-4 px-6 py-2 border-b flex-wrap"
+        style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-surface)' }}
+      >
+        <GameFilter selected={gameFilter} onChange={setGameFilter} />
+        <TypeFilter selected={typeFilter} onChange={setTypeFilter} />
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
         {/* 日历主体 */}
         <div className="flex-1 flex flex-col overflow-auto">
@@ -96,7 +120,7 @@ export default function App() {
           ) : (
             <CalendarGrid
               weeks={weeks}
-              events={events}
+              events={filteredEvents}
               selectedDate={selectedDate}
               onSelectDate={handleSelectDate}
               onSelectEvent={handleSelectEvent}
