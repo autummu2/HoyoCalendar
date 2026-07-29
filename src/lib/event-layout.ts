@@ -16,6 +16,7 @@ export interface EventBarSegment {
   isStart: boolean   // 活动是否从本周开始
   isEnd: boolean     // 活动是否在本周结束
   color: string      // 背景色
+  bgImage?: string   // 背景图片 URL（优先级高于 color）
 }
 
 /**
@@ -59,10 +60,11 @@ export function computeEventSegments(
         game: event.game,
         startCol,
         endCol,
-        lane: 0, // 下一步分配
+        lane: 0,
         isStart: event.start_date >= weekStart && event.start_date <= weekEnd,
         isEnd: event.end_date >= weekStart && event.end_date <= weekEnd,
-        color: gameMeta?.color ?? '#6B7280',
+        color: event.color ?? gameMeta?.color ?? '#6B7280',
+        bgImage: event.bar_bg_image,
       })
     }
 

@@ -37,6 +37,10 @@ export const EventSchema = z.object({
   description: z.string().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** 色条背景色（#RRGGBB），不指定则使用游戏品牌色 */
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  /** 色条背景图片 URL，优先级高于 color。用于卡池立绘等 */
+  bar_bg_image: z.string().optional(),
   banner_image: z.string().optional(),
   phases: z.array(EventPhaseSchema).optional(),
   tags: z.array(z.string()).optional(),

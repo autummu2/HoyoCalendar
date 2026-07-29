@@ -6,6 +6,7 @@
   title: "「碧羽飞黄」2.5 版本"
   type: "version-main"
   description: "全新星球「翁法罗斯」篇章继续，新角色飞霄登场。"
+  color: "#4C1D95"
   start_date: "2026-08-02"
   end_date: "2026-09-13"
   phases:
@@ -23,6 +24,7 @@
   title: "「飙驭霆锋」飞霄 + 银狼 UP"
   type: "banner"
   description: "限定五星角色「飞霄（雷巡猎）」+「银狼（量子虚无）」概率UP"
+  color: "#C2410C"
   start_date: "2026-08-02"
   end_date: "2026-08-23"
   tags: ["卡池", "飞霄", "银狼"]
@@ -33,6 +35,7 @@
   title: "「业途游魂」刃 + 卡芙卡 UP"
   type: "banner"
   description: "限定五星角色「刃（风毁灭）」+「卡芙卡（雷虚无）」概率UP"
+  color: "#9A3412"
   start_date: "2026-08-23"
   end_date: "2026-09-13"
   tags: ["卡池", "刃", "卡芙卡"]
@@ -43,6 +46,7 @@
   title: "「星天演武」搏击俱乐部"
   type: "challenge"
   description: "参与搏击挑战赛，通过不同关卡获取星琼、漫游指南等奖励。"
+  color: "#059669"
   start_date: "2026-08-09"
   end_date: "2026-08-30"
   tags: ["活动", "挑战", "星琼"]
@@ -52,6 +56,7 @@
   title: "忘却之庭·混沌回忆 2.5"
   type: "challenge"
   description: "本期混沌回忆敌方以量子弱点为主，建议携带量子输出角色。"
+  color: "#DC2626"
   start_date: "2026-08-05"
   end_date: "2026-09-02"
   tags: ["混沌回忆", "忘却之庭", "高难"]

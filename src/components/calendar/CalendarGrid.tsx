@@ -84,13 +84,27 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
                           width: `calc(${widthPct}% - 4px)`,
                           top: seg.lane * BAR_LANE_H,
                           height: BAR_HEIGHT,
-                          backgroundColor: seg.color,
                           borderRadius,
-                          opacity: 0.88,
+                          ...(seg.bgImage
+                            ? {
+                                backgroundImage: `url(${seg.bgImage})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                              }
+                            : {
+                                backgroundColor: seg.color,
+                              }),
                         }}
                         title={seg.title}
                       >
-                        <span className="text-[11px] text-white truncate font-medium leading-none">
+                        {/* 图片背景时加遮罩保证文字可读 */}
+                        {seg.bgImage && (
+                          <div
+                            className="absolute inset-0"
+                            style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius }}
+                          />
+                        )}
+                        <span className="relative z-10 text-[11px] text-white truncate font-medium leading-none drop-shadow-sm">
                           {seg.title}
                         </span>
                       </div>
