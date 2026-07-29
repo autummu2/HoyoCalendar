@@ -81,7 +81,6 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                       className={`
                         border-r text-left transition-colors
                         ${!day.isCurrentMonth ? 'opacity-35' : ''}
-                        ${day.isToday ? 'ring-2 ring-inset' : ''}
                         ${isSelected ? 'ring-2 ring-inset' : ''}
                         hover:bg-gray-50 dark:hover:bg-gray-800/50
                       `}
@@ -92,9 +91,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                           : isSelected
                             ? 'var(--bg-hover)'
                             : 'transparent',
-                        '--tw-ring-color': day.isToday
-                          ? 'var(--today-border)'
-                          : '#6366F1',
+                        '--tw-ring-color': '#6366F1',
                       } as React.CSSProperties}
                     />
                   )
@@ -166,14 +163,18 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
               >
                 {week.map((day) => (
                   <div key={day.date} className="p-1.5 border-r flex items-start">
-                    <span
-                      className={`text-sm font-medium ${day.isToday ? 'font-bold' : ''} ${!day.isCurrentMonth ? 'opacity-35' : ''}`}
-                      style={{
-                        color: day.isToday ? 'var(--today-border)' : 'var(--text-primary)',
-                      }}
-                    >
-                      {day.day}
-                    </span>
+                    {day.isToday ? (
+                      <span className="w-6 h-6 rounded-full bg-[var(--today-border)] text-white text-xs font-bold flex items-center justify-center leading-none">
+                        {day.day}
+                      </span>
+                    ) : (
+                      <span
+                        className={`text-sm font-medium ${!day.isCurrentMonth ? 'opacity-35' : ''}`}
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        {day.day}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
