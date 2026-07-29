@@ -1,20 +1,25 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
-import { buildCalendarGrid, getToday } from './lib/date-utils'
-import { isDateInRange } from './lib/date-utils'
-import { Header } from './components/layout/Header'
+import { buildCalendarGrid, getToday, parseDate, formatDate, isDateInRange } from './lib/date-utils'
+import { MONTH_LABELS } from './lib/constants'
+import { Header, formatWeekLabel, formatDayLabel } from './components/layout/Header'
 import { CalendarGrid } from './components/calendar/CalendarGrid'
+import { DayView } from './components/calendar/DayView'
 import { EventDetail } from './components/event/EventDetail'
 import { GameFilter } from './components/filter/GameFilter'
 import { TypeFilter } from './components/filter/TypeFilter'
 import type { Game, EventTypeId } from './types/events'
 
+type ViewMode = 'month' | 'week' | 'day'
+
 export default function App() {
   // ===== 主题 =====
   const { theme, toggleTheme } = useTheme()
 
-  // ===== 日期状态 =====
+  // ===== 日期与视图状态 =====
+  const today = getToday()
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -37,33 +42,88 @@ export default function App() {
   }, [events, gameFilter, typeFilter])
 
   // ===== 日历网格 =====
-  const weeks = buildCalendarGrid(currentYear, currentMonth)
+  const fullGrid = buildCalendarGrid(currentYear, currentMonth)
 
-  // ===== 导航 =====
-  const goToPrevMonth = useCallback(() => {
-    if (currentMonth === 1) {
-      setCurrentYear((y) => y - 1)
-      setCurrentMonth(12)
-    } else {
-      setCurrentMonth((m) => m - 1)
+  // 周视图：只显示包含 selectedDate 的那一周
+  const displayWeeks = useMemo(() => {
+    if (viewMode !== 'week' || !selectedDate) return fullGrid
+    const wi = fullGrid.findIndex((w) => w.some((d) => d.date === selectedDate))
+    return wi >= 0 ? [fullGrid[wi]] : fullGrid
+  }, [viewMode, fullGrid, selectedDate])
+
+  // ===== 导航标签 =====
+  const navLabel = useMemo(() => {
+    switch (viewMode) {
+      case 'month':
+        return `${currentYear}年 ${MONTH_LABELS[currentMonth - 1]}`
+      case 'week': {
+        const focusDate = selectedDate ?? today
+        const wi = fullGrid.findIndex((w) => w.some((d) => d.date === focusDate))
+        if (wi >= 0) {
+          return formatWeekLabel(fullGrid[wi][0].date, fullGrid[wi][6].date)
+        }
+        return ''
+      }
+      case 'day':
+        return formatDayLabel(selectedDate ?? today)
     }
-  }, [currentMonth])
+  }, [viewMode, currentYear, currentMonth, selectedDate, today, fullGrid])
 
-  const goToNextMonth = useCallback(() => {
-    if (currentMonth === 12) {
-      setCurrentYear((y) => y + 1)
-      setCurrentMonth(1)
+  // ===== 导航逻辑（按视图模式） =====
+  const syncMonthToDate = useCallback((dateStr: string) => {
+    const d = parseDate(dateStr)
+    setCurrentYear(d.getFullYear())
+    setCurrentMonth(d.getMonth() + 1)
+  }, [])
+
+  const goPrev = useCallback(() => {
+    if (viewMode === 'month') {
+      if (currentMonth === 1) { setCurrentYear((y) => y - 1); setCurrentMonth(12) }
+      else { setCurrentMonth((m) => m - 1) }
+    } else if (viewMode === 'week') {
+      const base = selectedDate ?? today
+      const d = parseDate(base)
+      d.setDate(d.getDate() - 7)
+      const newDate = formatDate(d)
+      setSelectedDate(newDate)
+      syncMonthToDate(newDate)
     } else {
-      setCurrentMonth((m) => m + 1)
+      const base = selectedDate ?? today
+      const d = parseDate(base)
+      d.setDate(d.getDate() - 1)
+      const newDate = formatDate(d)
+      setSelectedDate(newDate)
+      syncMonthToDate(newDate)
     }
-  }, [currentMonth])
+  }, [viewMode, currentMonth, selectedDate, today, syncMonthToDate])
 
-  const goToToday = useCallback(() => {
+  const goNext = useCallback(() => {
+    if (viewMode === 'month') {
+      if (currentMonth === 12) { setCurrentYear((y) => y + 1); setCurrentMonth(1) }
+      else { setCurrentMonth((m) => m + 1) }
+    } else if (viewMode === 'week') {
+      const base = selectedDate ?? today
+      const d = parseDate(base)
+      d.setDate(d.getDate() + 7)
+      const newDate = formatDate(d)
+      setSelectedDate(newDate)
+      syncMonthToDate(newDate)
+    } else {
+      const base = selectedDate ?? today
+      const d = parseDate(base)
+      d.setDate(d.getDate() + 1)
+      const newDate = formatDate(d)
+      setSelectedDate(newDate)
+      syncMonthToDate(newDate)
+    }
+  }, [viewMode, currentMonth, selectedDate, today, syncMonthToDate])
+
+  const goToday = useCallback(() => {
     const now = new Date()
     setCurrentYear(now.getFullYear())
     setCurrentMonth(now.getMonth() + 1)
-    setSelectedDate(getToday())
-  }, [])
+    setSelectedDate(today)
+  }, [today])
 
   // ===== 选中日期的活动 =====
   const selectedEvents = selectedDate
@@ -94,11 +154,12 @@ export default function App() {
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
-        year={currentYear}
-        month={currentMonth}
-        onPrevMonth={goToPrevMonth}
-        onNextMonth={goToNextMonth}
-        onToday={goToToday}
+        viewMode={viewMode}
+        onChangeView={setViewMode}
+        navLabel={navLabel}
+        onPrev={goPrev}
+        onNext={goNext}
+        onToday={goToday}
       />
 
       {/* ===== 筛选栏 ===== */}
@@ -111,15 +172,22 @@ export default function App() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* 日历主体 */}
+        {/* 主内容区 */}
         <div className="flex-1 flex flex-col overflow-auto">
           {loading ? (
             <div className="flex items-center justify-center flex-1" style={{ color: 'var(--text-muted)' }}>
               <p>加载中...</p>
             </div>
+          ) : viewMode === 'day' ? (
+            <DayView
+              date={selectedDate ?? today}
+              events={selectedEvents}
+              highlightedEventId={highlightedEventId}
+              onSelectEvent={(id) => setHighlightedEventId(id)}
+            />
           ) : (
             <CalendarGrid
-              weeks={weeks}
+              weeks={displayWeeks}
               events={filteredEvents}
               selectedDate={selectedDate}
               onSelectDate={handleSelectDate}
@@ -128,8 +196,8 @@ export default function App() {
           )}
         </div>
 
-        {/* 活动详情侧栏 */}
-        {selectedDate && (
+        {/* 活动详情侧栏（月/周视图时显示） */}
+        {viewMode !== 'day' && selectedDate && (
           <EventDetail
             events={selectedEvents}
             date={selectedDate}

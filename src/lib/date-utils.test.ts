@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   getDaysInMonth,
-  getFirstDayOfMonth,
   formatDate,
   parseDate,
   isDateInRange,
