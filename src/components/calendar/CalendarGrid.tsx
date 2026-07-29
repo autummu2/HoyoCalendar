@@ -122,7 +122,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
 
               {/* ---- 日期格子层 ---- */}
               <div
-                className="grid grid-cols-7 h-full"
+                className="grid grid-cols-7 h-full relative z-20"
                 style={{ paddingTop: barsAreaHeight > 0 ? barsAreaHeight + 6 : 0 }}
               >
                 {week.map((day) => {
@@ -133,7 +133,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                       key={day.date}
                       onClick={() => onSelectDate(day.date)}
                       className={`
-                        min-h-[56px] p-1.5 border-r text-left transition-colors relative z-20
+                        min-h-[56px] p-1.5 border-r text-left transition-colors
                         ${!day.isCurrentMonth ? 'opacity-35' : ''}
                         ${day.isToday ? 'ring-2 ring-inset' : ''}
                         ${isSelected ? 'ring-2 ring-inset' : ''}
@@ -150,7 +150,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                       } as React.CSSProperties}
                     >
                       <span
-                        className={`text-sm font-medium relative z-20 ${day.isToday ? 'font-bold' : ''}`}
+                        className={`text-sm font-medium ${day.isToday ? 'font-bold' : ''}`}
                         style={{
                           color: day.isToday ? 'var(--today-border)' : 'var(--text-primary)',
                         }}
