@@ -93,6 +93,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
                               }
                             : {
                                 backgroundColor: seg.color,
+                                border: '1px solid rgba(0,0,0,0.08)',
                               }),
                         }}
                         title={seg.title}
@@ -104,7 +105,10 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
                             style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius }}
                           />
                         )}
-                        <span className="relative z-10 text-[11px] text-white truncate font-medium leading-none drop-shadow-sm">
+                        <span
+                          className="relative z-10 text-[11px] truncate font-medium leading-none"
+                          style={{ color: seg.bgImage ? '#fff' : '#1E293B' }}
+                        >
                           {seg.title}
                         </span>
                       </div>
