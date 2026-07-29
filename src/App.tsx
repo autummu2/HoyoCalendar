@@ -15,6 +15,7 @@ export default function App() {
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
 
   // ===== 活动数据 =====
   const { events, loading, error } = useEvents()
@@ -53,6 +54,17 @@ export default function App() {
     ? events.filter((e) => isDateInRange(selectedDate, e.start_date, e.end_date))
     : []
 
+  // ===== 日期/活动选择 =====
+  const handleSelectDate = useCallback((date: string) => {
+    setSelectedDate(date)
+    setHighlightedEventId(null) // 点日期格子 → 不高亮特定活动
+  }, [])
+
+  const handleSelectEvent = useCallback((date: string, eventId: string) => {
+    setSelectedDate(date)
+    setHighlightedEventId(eventId) // 点色条 → 高亮该活动
+  }, [])
+
   // ===== 错误状态 =====
   if (error) {
     return (
@@ -86,7 +98,8 @@ export default function App() {
               weeks={weeks}
               events={events}
               selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
+              onSelectDate={handleSelectDate}
+              onSelectEvent={handleSelectEvent}
             />
           )}
         </div>
@@ -96,7 +109,8 @@ export default function App() {
           <EventDetail
             events={selectedEvents}
             date={selectedDate}
-            onClose={() => setSelectedDate(null)}
+            highlightedEventId={highlightedEventId}
+            onClose={() => { setSelectedDate(null); setHighlightedEventId(null) }}
           />
         )}
       </div>

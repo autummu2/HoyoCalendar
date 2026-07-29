@@ -4,10 +4,11 @@ import { GAME_META, EVENT_TYPE_META } from '../../types/events'
 interface EventDetailProps {
   events: GameEvent[]
   date: string
+  highlightedEventId?: string | null
   onClose: () => void
 }
 
-export function EventDetail({ events, date, onClose }: EventDetailProps) {
+export function EventDetail({ events, date, highlightedEventId, onClose }: EventDetailProps) {
   if (events.length === 0) {
     return (
       <aside
@@ -51,8 +52,8 @@ export function EventDetail({ events, date, onClose }: EventDetailProps) {
           return (
             <li
               key={event.id}
-              className="rounded-lg p-3 border"
-              style={{ borderColor: 'var(--border-color)' }}
+              className={`rounded-lg p-3 border transition-all ${event.id === highlightedEventId ? 'ring-2 ring-blue-400 shadow-sm' : ''}`}
+              style={{ borderColor: event.id === highlightedEventId ? '#60A5FA' : 'var(--border-color)' }}
             >
               {/* 游戏标签 + 类型标签 */}
               <div className="flex items-center gap-2 mb-2">

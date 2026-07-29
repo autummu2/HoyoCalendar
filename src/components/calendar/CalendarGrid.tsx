@@ -13,6 +13,8 @@ interface CalendarGridProps {
   events: GameEvent[]
   selectedDate: string | null
   onSelectDate: (date: string) => void
+  /** 点击色条时触发，传入色条起始日期 + 活动 ID */
+  onSelectEvent?: (date: string, eventId: string) => void
 }
 
 /**
@@ -21,7 +23,7 @@ interface CalendarGridProps {
  * 每个活动渲染为跨越多天的连续色条，显示活动标题。
  * 多活动垂直堆叠，贪心算法分配通道避免遮挡。
  */
-export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: CalendarGridProps) {
+export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSelectEvent }: CalendarGridProps) {
   // 为整个月计算色条分段（按周分组）
   const weekSegments = useMemo(
     () => computeEventSegments(weeks, events),
@@ -62,7 +64,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
               {/* ---- 活动色条层 ---- */}
               {segs.length > 0 && (
                 <div
-                  className="absolute inset-x-0 z-10 pointer-events-none"
+                  className="absolute inset-x-0 z-10"
                   style={{ top: 4, height: barsAreaHeight }}
                 >
                   {segs.map((seg) => {
@@ -78,7 +80,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
                     return (
                       <div
                         key={seg.eventId}
-                        className="absolute flex items-center px-1.5 overflow-hidden select-none"
+                        className="absolute flex items-center px-1.5 overflow-hidden select-none cursor-pointer hover:brightness-95 transition-[filter]"
                         style={{
                           left: `${leftPct}%`,
                           width: `calc(${widthPct}% - 4px)`,
@@ -97,6 +99,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate }: Cale
                               }),
                         }}
                         title={seg.title}
+                        onClick={() => onSelectEvent?.(week[seg.startCol].date, seg.eventId)}
                       >
                         {/* 图片背景时加遮罩保证文字可读 */}
                         {seg.bgImage && (
