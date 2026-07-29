@@ -2,8 +2,9 @@
 
 > **版本**: v0.1.0-draft  
 > **创建日期**: 2026-07-28  
-> **状态**: ⚠️ 待评审确认  
-> **产品经理**: AI辅助设计 (待人工确认)
+> **最后更新**: 2026-07-29  
+> **状态**: 🚀 Sprint 1 进行中  
+> **产品经理**: AI辅助设计 + 人工确认
 
 ---
 
@@ -253,6 +254,8 @@ Git管理数据版本    数据录入后台          CMS系统
   title: "「韶光抚月」版本活动"
   type: "version-main"       # 版本主题活动
   description: "参与活动获取限定武器「贯虹之槊」与大量原石"
+  color: "#DBEAFE"           # 可选：色条背景色（#RRGGBB），不指定则用游戏品牌色
+  bar_bg_image: ""           # 可选：色条背景图片URL（优先级高于 color）
   start_date: "2026-08-15"
   end_date: "2026-09-26"
   banner_image: "/images/events/gi-shaoguang.jpg"
@@ -340,41 +343,46 @@ Git管理数据版本    数据录入后台          CMS系统
 
 ### 8.2 详细迭代拆解
 
-#### 🚀 Sprint 0 — 项目初始化 (第1周)
+#### ✅ Sprint 0 — 项目初始化 (第1周) — 完成于 2026-07-29
 
-| 任务 | 产出 | 估时 |
+| 任务 | 产出 | 状态 |
 |------|------|------|
-| 创建 GitHub 仓库，配置项目管理 | 仓库 + Project Board | 2h |
-| 初始化 React + TS + Vite 项目 | 项目骨架 | 2h |
-| 配置 ESLint + Prettier + Husky | 代码规范 | 2h |
-| 配置 GitHub Actions CI | 自动化流水线 | 2h |
-| 初始化 CLAUDE.md 项目文档 | 项目说明 | 1h |
-| 设计数据模型 (Zod Schema) | 类型定义 | 3h |
-| 编写首批活动样本数据 (YAML) | 样本数据 x 5-10条 | 4h |
+| 初始化 React + TS + Vite 项目 | 项目骨架 | ✅ |
+| 配置 ESLint + Prettier | 代码规范 | ✅ |
+| 设计数据模型 (Zod Schema) | 类型定义 + 元数据 | ✅ |
+| 编写首批活动样本数据 (YAML) | 3款游戏 × 5条 = 15条样本 | ✅ |
+| 初始化 CLAUDE.md 项目文档 | AI 开发指引 | ✅ |
+| 初始化 Git 仓库 + develop 分支 | 版本控制 | ✅ |
+| 创建 GitHub 仓库 / CI / 部署 | — | ⬜ 待推送 |
 
-#### 🚀 Sprint 1 — 日历核心组件 (第2-3周)
+#### 🚀 Sprint 1 — 日历核心组件 (第2-3周) — 进行中
 
-| 任务 | 产出 | 估时 |
+| 任务 | 产出 | 状态 |
 |------|------|------|
-| 月视图日历网格组件 | CalendarGrid | 8h |
-| 月份导航 (上/下月, 回到今天) | MonthNavigator | 2h |
-| 活动数据加载与解析 | DataLoader | 4h |
-| 活动在日历格子中的色条渲染 | EventBar | 6h |
-| 今日高亮 + 活动日期标记 | 高亮系统 | 2h |
-| 各游戏品牌色主题变量 | 主题系统 | 2h |
-| 基础响应式适配 | 布局 | 4h |
-| 单元测试 | 测试 | 4h |
+| 月视图日历网格组件 | CalendarGrid + 三层架构 | ✅ 已完成 |
+| Paimon.moe 风格连续色条 | event-layout.ts 分段引擎 | ✅ 已完成 |
+| 活动个性化颜色 + 图片背景 | color / bar_bg_image 字段 | ✅ 已完成 |
+| 浅色色条 + 深色文字配色 | Tailwind 50/100 色阶 | ✅ 已完成 |
+| 色条点击 → 详情面板高亮 | onSelectEvent + highlightedEventId | ✅ 已完成 |
+| 月份导航 (上/下月, 回到今天) | Header 组件 | ✅ 已完成 |
+| 活动数据加载与解析 | DataLoader + Zod 校验 | ✅ 已完成 |
+| 今日高亮 + 活动日期标记 | today ring + 选中态 | ✅ 已完成 |
+| 暗色/亮色主题切换 | useTheme + CSS变量 | ✅ 已完成 |
+| YAML 数据文件接入 (替换硬编码) | Vite glob import | ⬜ 待实现 |
+| 游戏筛选器 | GameFilter | ⬜ 待实现 |
+| 活动类型筛选器 | TypeFilter | ⬜ 待实现 |
+| 单元测试 | Vitest | ⬜ 待实现 |
 
 #### 🚀 Sprint 2 — 活动详情 & 筛选 (第4周)
 
-| 任务 | 产出 | 估时 |
+| 任务 | 产出 | 状态 |
 |------|------|------|
-| 活动详情面板 (点击展开) | EventDetail | 6h |
-| 游戏筛选器 | GameFilter | 3h |
-| 活动类型筛选器 | TypeFilter | 3h |
-| 暗色/亮色主题切换 | ThemeToggle | 3h |
-| 部署到 Vercel/GitHub Pages | 线上预览 | 2h |
-| MVP 验收测试 | E2E测试 | 3h |
+| 活动详情面板 (点击展开) | EventDetail + 高亮联动 | ✅ 已完成 |
+| 游戏筛选器 | GameFilter | ⬜ 待实现 |
+| 活动类型筛选器 | TypeFilter | ⬜ 待实现 |
+| 周视图 & 日视图 | — | ⬜ 待实现 |
+| 部署到 Vercel/GitHub Pages | 线上预览 | ⬜ 待实现 |
+| MVP 验收测试 | E2E测试 | ⬜ 待实现 |
 
 ---
 
@@ -728,9 +736,9 @@ git branch -d feature/calendar-grid
 - [ ] 配置 Issue Labels（按 10.3 节）
 - [ ] 创建 Issue Templates（功能请求 + Bug报告）
 - [ ] 配置 Vercel 关联 GitHub 仓库（自动部署）
-- [ ] 添加 `.gitignore`（node_modules, dist, .env 等）
+- [x] 添加 `.gitignore`（node_modules, dist, .env 等）
 - [ ] 添加 LICENSE（建议 MIT）
-- [ ] 编写 README.md（项目简介 + 本地运行说明）
+- [x] 编写 README.md（项目简介 + 本地运行说明）
 
 ---
 
@@ -741,7 +749,11 @@ git branch -d feature/calendar-grid
 | 核心决策 (11.2) | ✅ 全部 8 项已确认 |
 | 补充确认 (12.x) | ✅ 全部采纳建议 |
 | 开发规范 (13.x) | ✅ 已确认 |
-| 当前阶段 | 🚀 Sprint 0 执行中 (2026-07-29) |
+| Sprint 0 — 项目初始化 | ✅ 完成 (2026-07-29) |
+| Sprint 1 — 日历核心组件 | 🚀 进行中 (10/14 已完成) |
+| 当前分支 | `feature/event-bar-enhance` |
+| 已提交 | 6 commits |
+| 下一步 | YAML数据接入 / 筛选器组件 / 推送到 GitHub |
 
 ---
 
