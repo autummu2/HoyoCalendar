@@ -46,10 +46,11 @@ export default function App() {
 
   // 周视图：只显示包含 selectedDate 的那一周
   const displayWeeks = useMemo(() => {
-    if (viewMode !== 'week' || !selectedDate) return fullGrid
-    const wi = fullGrid.findIndex((w) => w.some((d) => d.date === selectedDate))
+    if (viewMode !== 'week') return fullGrid
+    const focusDate = selectedDate ?? today
+    const wi = fullGrid.findIndex((w) => w.some((d) => d.date === focusDate))
     return wi >= 0 ? [fullGrid[wi]] : fullGrid
-  }, [viewMode, fullGrid, selectedDate])
+  }, [viewMode, fullGrid, selectedDate, today])
 
   // ===== 导航标签 =====
   const navLabel = useMemo(() => {
@@ -125,6 +126,14 @@ export default function App() {
     setSelectedDate(today)
   }, [today])
 
+  // 切换视图时，如果还没有选中日期则自动定位到今天
+  const handleChangeView = useCallback((mode: ViewMode) => {
+    setViewMode(mode)
+    if (!selectedDate && mode !== 'month') {
+      setSelectedDate(today)
+    }
+  }, [selectedDate, today])
+
   // ===== 选中日期的活动 =====
   const selectedEvents = selectedDate
     ? filteredEvents.filter((e) => isDateInRange(selectedDate, e.start_date, e.end_date))
@@ -155,7 +164,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         viewMode={viewMode}
-        onChangeView={setViewMode}
+        onChangeView={handleChangeView}
         navLabel={navLabel}
         onPrev={goPrev}
         onNext={goNext}
