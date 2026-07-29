@@ -65,8 +65,11 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                 minHeight: Math.max(barsAreaH + MIN_CELL_H, MIN_CELL_H),
               }}
             >
-              {/* ======== Layer 1: 格子背景层 (z-0) ======== */}
-              <div className="grid grid-cols-7 absolute inset-0 z-0">
+              {/* ======== Layer 1: 格子背景层 (z-0) — 从色条区下方开始 ======== */}
+              <div
+                className="grid grid-cols-7 absolute inset-x-0 bottom-0 z-0"
+                style={{ top: barsAreaH }}
+              >
                 {week.map((day) => {
                   const isSelected = day.date === selectedDate
                   return (
@@ -154,8 +157,11 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                 </div>
               )}
 
-              {/* ======== Layer 3: 日期数字层 (z-20, pointer-events-none) ======== */}
-              <div className="grid grid-cols-7 absolute inset-0 z-20 pointer-events-none">
+              {/* ======== Layer 3: 日期数字层 (z-20) — 与格子背景同区域 ======== */}
+              <div
+                className="grid grid-cols-7 absolute inset-x-0 bottom-0 z-20 pointer-events-none"
+                style={{ top: barsAreaH }}
+              >
                 {week.map((day) => (
                   <div
                     key={day.date}
