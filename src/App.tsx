@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
+import { useCompletedEvents } from './hooks/useCompletedEvents'
 import { buildCalendarGrid, getToday, parseDate, formatDate, isDateInRange } from './lib/date-utils'
 import { MONTH_LABELS } from './lib/constants'
 import { Header, formatWeekLabel, formatDayLabel } from './components/layout/Header'
@@ -9,6 +10,7 @@ import { DayView } from './components/calendar/DayView'
 import { EventDetail } from './components/event/EventDetail'
 import { GameFilter } from './components/filter/GameFilter'
 import { TypeFilter } from './components/filter/TypeFilter'
+import { CompletionFilter } from './components/filter/CompletionFilter'
 import type { Game, EventTypeId } from './types/events'
 
 type ViewMode = 'month' | 'week' | 'day'
@@ -28,18 +30,29 @@ export default function App() {
   // ===== 筛选状态 =====
   const [gameFilter, setGameFilter] = useState<Game[]>([])
   const [typeFilter, setTypeFilter] = useState<EventTypeId[]>([])
+  const [completionFilter, setCompletionFilter] = useState<('incomplete' | 'complete')[]>([])
+
+  // ===== 完成状态 =====
+  const { isCompleted, toggleComplete } = useCompletedEvents()
 
   // ===== 活动数据 =====
   const { events, loading, error } = useEvents()
 
   // ===== 筛选后的活动 =====
   const filteredEvents = useMemo(() => {
+    // 选中 0 个或 2 个 = 全部；选中 1 个 = 仅该状态
+    const completionActive = completionFilter.length === 1
     return events.filter((e) => {
       if (gameFilter.length > 0 && !gameFilter.includes(e.game)) return false
       if (typeFilter.length > 0 && !typeFilter.includes(e.type)) return false
+      if (completionActive) {
+        const done = isCompleted(e.id)
+        if (completionFilter[0] === 'complete' && !done) return false
+        if (completionFilter[0] === 'incomplete' && done) return false
+      }
       return true
     })
-  }, [events, gameFilter, typeFilter])
+  }, [events, gameFilter, typeFilter, completionFilter, isCompleted])
 
   // ===== 日历网格 =====
   const fullGrid = buildCalendarGrid(currentYear, currentMonth)
@@ -178,6 +191,7 @@ export default function App() {
       >
         <GameFilter selected={gameFilter} onChange={setGameFilter} />
         <TypeFilter selected={typeFilter} onChange={setTypeFilter} />
+        <CompletionFilter selected={completionFilter} onChange={setCompletionFilter} />
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -192,6 +206,8 @@ export default function App() {
               date={selectedDate ?? today}
               events={selectedEvents}
               highlightedEventId={highlightedEventId}
+              isCompleted={isCompleted}
+              onToggleComplete={toggleComplete}
               onSelectEvent={(id) => setHighlightedEventId(id)}
             />
           ) : (
@@ -211,6 +227,8 @@ export default function App() {
             events={selectedEvents}
             date={selectedDate}
             highlightedEventId={highlightedEventId}
+            isCompleted={isCompleted}
+            onToggleComplete={toggleComplete}
             onClose={() => { setSelectedDate(null); setHighlightedEventId(null) }}
           />
         )}

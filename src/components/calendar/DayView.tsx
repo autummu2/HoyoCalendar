@@ -6,13 +6,15 @@ interface DayViewProps {
   date: string
   events: GameEvent[]
   highlightedEventId?: string | null
+  isCompleted?: (eventId: string) => boolean
+  onToggleComplete?: (eventId: string) => void
   onSelectEvent?: (eventId: string) => void
 }
 
 /**
  * 日视图 — 将当天活动以卡片列表形式展示
  */
-export function DayView({ date, events, highlightedEventId, onSelectEvent }: DayViewProps) {
+export function DayView({ date, events, highlightedEventId, isCompleted, onToggleComplete, onSelectEvent }: DayViewProps) {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-4">
       {/* 日期标题 */}
@@ -42,10 +44,11 @@ export function DayView({ date, events, highlightedEventId, onSelectEvent }: Day
                   backgroundColor: 'var(--bg-surface)',
                   borderLeftWidth: '4px',
                   borderLeftColor: event.color ?? gameMeta.color,
+                  opacity: isCompleted?.(event.id) ? 0.55 : 1,
                 }}
                 onClick={() => onSelectEvent?.(event.id)}
               >
-                {/* 游戏标签 + 类型 */}
+                {/* 游戏标签 + 类型 + 完成切换 */}
                 <div className="flex items-center gap-2 mb-2">
                   <span
                     className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
@@ -56,6 +59,20 @@ export function DayView({ date, events, highlightedEventId, onSelectEvent }: Day
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     {typeMeta.icon} {typeMeta.label}
                   </span>
+                  <div className="flex-1" />
+                  {onToggleComplete && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onToggleComplete(event.id) }}
+                      className={`text-sm w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isCompleted?.(event.id)
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : 'border-gray-300 text-transparent hover:border-gray-400'
+                      }`}
+                      title={isCompleted?.(event.id) ? '标记为未完成' : '标记为完成'}
+                    >
+                      ✓
+                    </button>
+                  )}
                 </div>
 
                 {/* 标题 */}

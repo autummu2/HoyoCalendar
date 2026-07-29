@@ -5,10 +5,12 @@ interface EventDetailProps {
   events: GameEvent[]
   date: string
   highlightedEventId?: string | null
+  isCompleted?: (eventId: string) => boolean
+  onToggleComplete?: (eventId: string) => void
   onClose: () => void
 }
 
-export function EventDetail({ events, date, highlightedEventId, onClose }: EventDetailProps) {
+export function EventDetail({ events, date, highlightedEventId, isCompleted, onToggleComplete, onClose }: EventDetailProps) {
   if (events.length === 0) {
     return (
       <aside
@@ -53,9 +55,12 @@ export function EventDetail({ events, date, highlightedEventId, onClose }: Event
             <li
               key={event.id}
               className={`rounded-lg p-3 border transition-all ${event.id === highlightedEventId ? 'ring-2 ring-blue-400 shadow-sm' : ''}`}
-              style={{ borderColor: event.id === highlightedEventId ? '#60A5FA' : 'var(--border-color)' }}
+              style={{
+                borderColor: event.id === highlightedEventId ? '#60A5FA' : 'var(--border-color)',
+                opacity: isCompleted?.(event.id) ? 0.55 : 1,
+              }}
             >
-              {/* 游戏标签 + 类型标签 */}
+              {/* 游戏标签 + 类型标签 + 完成切换 */}
               <div className="flex items-center gap-2 mb-2">
                 <span
                   className="text-xs px-2 py-0.5 rounded-full text-white font-medium"
@@ -66,6 +71,20 @@ export function EventDetail({ events, date, highlightedEventId, onClose }: Event
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {typeMeta.icon} {typeMeta.label}
                 </span>
+                <div className="flex-1" />
+                {onToggleComplete && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onToggleComplete(event.id) }}
+                    className={`text-sm w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      isCompleted?.(event.id)
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'border-gray-300 text-transparent hover:border-gray-400'
+                    }`}
+                    title={isCompleted?.(event.id) ? '标记为未完成' : '标记为完成'}
+                  >
+                    ✓
+                  </button>
+                )}
               </div>
 
               {/* 活动标题 */}
