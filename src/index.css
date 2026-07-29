@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* ===== HoyoCalendar Design Tokens ===== */
+:root {
+  /* Game brand colors */
+  --color-genshin: #4A90D9;
+  --color-genshin-accent: #FFCC32;
+  --color-hsr: #7B5EA7;
+  --color-zzz: #00E5A0;
+  --color-tears-of-themis: #D4929A;
+  --color-honkai3: #FF6B9D;
+
+  /* Event type colors */
+  --type-version-main: #6366F1;    /* Indigo */
+  --type-banner: #F59E0B;          /* Amber */
+  --type-daily: #10B981;           /* Emerald */
+  --type-challenge: #EF4444;       /* Red */
+  --type-web-event: #EC4899;       /* Pink */
+  --type-festival: #F97316;        /* Orange */
+  --type-reward: #8B5CF6;          /* Violet */
+  --type-update: #6B7280;          /* Gray */
+
+  /* Surface colors (light theme) */
+  --bg-primary: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-hover: #F3F4F6;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --border-color: #E5E7EB;
+  --today-bg: #EFF6FF;
+  --today-border: #3B82F6;
+
+  color-scheme: light;
+}
+
+/* ===== Dark theme ===== */
+.dark {
+  --bg-primary: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-hover: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border-color: #334155;
+  --today-bg: #1E3A5F;
+  --today-border: #60A5FA;
+
+  color-scheme: dark;
+}
+
+/* ===== Base styles ===== */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
