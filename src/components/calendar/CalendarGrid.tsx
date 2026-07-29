@@ -7,7 +7,9 @@ import { computeEventSegments } from '../../lib/event-layout'
 const BAR_HEIGHT = 22
 const BAR_GAP = 3
 const BAR_LANE_H = BAR_HEIGHT + BAR_GAP // 25px per lane
-const MIN_CELL_H = 56 // 每格最小高度
+const DATE_LINE_H = 28 // 日期行高度
+const MIN_CELL_H = 56 // 无活动时的最小格高
+const BAR_TOP = DATE_LINE_H + 2 // 色条距顶部距离（日期下方2px）
 
 interface CalendarGridProps {
   weeks: CalendarDay[][]
@@ -20,10 +22,10 @@ interface CalendarGridProps {
 /**
  * 日历月视图网格组件 — Paimon.moe 风格
  *
- * 三层渲染架构（每周围）：
- *   Layer 1 (z-0): 格子背景（今日高亮、选中态），可点击选中日期
- *   Layer 2 (z-10): 活动色条，容器 pointer-events-none，色条自身可点击
- *   Layer 3 (z-20): 日期数字，pointer-events-none，浮在最上层
+ * 三层渲染架构：
+ *   Layer 1 (z-0):  格子背景（今日高亮、选中态），全高可点击
+ *   Layer 2 (z-10): 活动色条，日期行下方，容器 pointer-events-none
+ *   Layer 3 (z-20): 日期数字，顶部固定高度，pointer-events-none
  */
 export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSelectEvent }: CalendarGridProps) {
   const weekSegments = useMemo(
@@ -54,7 +56,10 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
         {weeks.map((week, wi) => {
           const segs = weekSegments[wi]
           const maxLane = segs.length > 0 ? Math.max(...segs.map((s) => s.lane)) : 0
-          const barsAreaH = segs.length > 0 ? (maxLane + 1) * BAR_LANE_H + 8 : 0
+          const barsAreaH = segs.length > 0 ? (maxLane + 1) * BAR_LANE_H + 4 : 0
+          const rowMinH = segs.length > 0
+            ? BAR_TOP + barsAreaH + 8
+            : MIN_CELL_H
 
           return (
             <div
@@ -62,14 +67,11 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
               className="relative flex-1 border-b"
               style={{
                 borderColor: 'var(--border-color)',
-                minHeight: Math.max(barsAreaH + MIN_CELL_H, MIN_CELL_H),
+                minHeight: rowMinH,
               }}
             >
-              {/* ======== Layer 1: 格子背景层 (z-0) — 从色条区下方开始 ======== */}
-              <div
-                className="grid grid-cols-7 absolute inset-x-0 bottom-0 z-0"
-                style={{ top: barsAreaH }}
-              >
+              {/* ======== Layer 1: 格子背景 (z-0) — 填充整行 ======== */}
+              <div className="grid grid-cols-7 absolute inset-0 z-0">
                 {week.map((day) => {
                   const isSelected = day.date === selectedDate
                   return (
@@ -77,7 +79,7 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                       key={day.date}
                       onClick={() => onSelectDate(day.date)}
                       className={`
-                        border-r border-b text-left transition-colors
+                        border-r text-left transition-colors
                         ${!day.isCurrentMonth ? 'opacity-35' : ''}
                         ${day.isToday ? 'ring-2 ring-inset' : ''}
                         ${isSelected ? 'ring-2 ring-inset' : ''}
@@ -99,11 +101,11 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                 })}
               </div>
 
-              {/* ======== Layer 2: 活动色条层 (z-10) ======== */}
+              {/* ======== Layer 2: 活动色条 (z-10) — 日期行下方 ======== */}
               {segs.length > 0 && (
                 <div
                   className="absolute inset-x-0 z-10 pointer-events-none"
-                  style={{ top: 4, height: barsAreaH }}
+                  style={{ top: BAR_TOP, height: barsAreaH }}
                 >
                   {segs.map((seg) => {
                     const leftPct = (seg.startCol / 7) * 100
@@ -157,17 +159,13 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                 </div>
               )}
 
-              {/* ======== Layer 3: 日期数字层 (z-20) — 与格子背景同区域 ======== */}
+              {/* ======== Layer 3: 日期数字 (z-20) — 顶部固定高度 ======== */}
               <div
-                className="grid grid-cols-7 absolute inset-x-0 bottom-0 z-20 pointer-events-none"
-                style={{ top: barsAreaH }}
+                className="grid grid-cols-7 absolute top-0 inset-x-0 z-20 pointer-events-none"
+                style={{ height: DATE_LINE_H }}
               >
                 {week.map((day) => (
-                  <div
-                    key={day.date}
-                    className="p-1.5 border-r border-b"
-                    style={{ borderColor: 'var(--border-color)' }}
-                  >
+                  <div key={day.date} className="p-1.5 border-r flex items-start">
                     <span
                       className={`text-sm font-medium ${day.isToday ? 'font-bold' : ''} ${!day.isCurrentMonth ? 'opacity-35' : ''}`}
                       style={{
