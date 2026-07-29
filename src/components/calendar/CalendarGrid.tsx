@@ -7,24 +7,25 @@ import { computeEventSegments } from '../../lib/event-layout'
 const BAR_HEIGHT = 22
 const BAR_GAP = 3
 const BAR_LANE_H = BAR_HEIGHT + BAR_GAP // 25px per lane
+const MIN_CELL_H = 56 // 每格最小高度
 
 interface CalendarGridProps {
   weeks: CalendarDay[][]
   events: GameEvent[]
   selectedDate: string | null
   onSelectDate: (date: string) => void
-  /** 点击色条时触发，传入色条起始日期 + 活动 ID */
   onSelectEvent?: (date: string, eventId: string) => void
 }
 
 /**
  * 日历月视图网格组件 — Paimon.moe 风格
  *
- * 每个活动渲染为跨越多天的连续色条，显示活动标题。
- * 多活动垂直堆叠，贪心算法分配通道避免遮挡。
+ * 三层渲染架构（每周围）：
+ *   Layer 1 (z-0): 格子背景（今日高亮、选中态），可点击选中日期
+ *   Layer 2 (z-10): 活动色条，容器 pointer-events-none，色条自身可点击
+ *   Layer 3 (z-20): 日期数字，pointer-events-none，浮在最上层
  */
 export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSelectEvent }: CalendarGridProps) {
-  // 为整个月计算色条分段（按周分组）
   const weekSegments = useMemo(
     () => computeEventSegments(weeks, events),
     [weeks, events],
@@ -53,19 +54,53 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
         {weeks.map((week, wi) => {
           const segs = weekSegments[wi]
           const maxLane = segs.length > 0 ? Math.max(...segs.map((s) => s.lane)) : 0
-          const barsAreaHeight = segs.length > 0 ? (maxLane + 1) * BAR_LANE_H : 0
+          const barsAreaH = segs.length > 0 ? (maxLane + 1) * BAR_LANE_H + 8 : 0
 
           return (
             <div
               key={wi}
               className="relative flex-1 border-b"
-              style={{ borderColor: 'var(--border-color)' }}
+              style={{
+                borderColor: 'var(--border-color)',
+                minHeight: Math.max(barsAreaH + MIN_CELL_H, MIN_CELL_H),
+              }}
             >
-              {/* ---- 活动色条层 ---- */}
+              {/* ======== Layer 1: 格子背景层 (z-0) ======== */}
+              <div className="grid grid-cols-7 absolute inset-0 z-0">
+                {week.map((day) => {
+                  const isSelected = day.date === selectedDate
+                  return (
+                    <button
+                      key={day.date}
+                      onClick={() => onSelectDate(day.date)}
+                      className={`
+                        border-r border-b text-left transition-colors
+                        ${!day.isCurrentMonth ? 'opacity-35' : ''}
+                        ${day.isToday ? 'ring-2 ring-inset' : ''}
+                        ${isSelected ? 'ring-2 ring-inset' : ''}
+                        hover:bg-gray-50 dark:hover:bg-gray-800/50
+                      `}
+                      style={{
+                        borderColor: 'var(--border-color)',
+                        backgroundColor: day.isToday
+                          ? 'var(--today-bg)'
+                          : isSelected
+                            ? 'var(--bg-hover)'
+                            : 'transparent',
+                        '--tw-ring-color': day.isToday
+                          ? 'var(--today-border)'
+                          : '#6366F1',
+                      } as React.CSSProperties}
+                    />
+                  )
+                })}
+              </div>
+
+              {/* ======== Layer 2: 活动色条层 (z-10) ======== */}
               {segs.length > 0 && (
                 <div
-                  className="absolute inset-x-0 z-10"
-                  style={{ top: 4, height: barsAreaHeight }}
+                  className="absolute inset-x-0 z-10 pointer-events-none"
+                  style={{ top: 4, height: barsAreaH }}
                 >
                   {segs.map((seg) => {
                     const leftPct = (seg.startCol / 7) * 100
@@ -78,9 +113,9 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                     ].join(' ')
 
                     return (
-                      <div
+                      <button
                         key={seg.eventId}
-                        className="absolute flex items-center px-1.5 overflow-hidden select-none cursor-pointer hover:brightness-95 transition-[filter]"
+                        className="absolute flex items-center px-1.5 overflow-hidden select-none pointer-events-auto cursor-pointer hover:brightness-95 transition-[filter]"
                         style={{
                           left: `${leftPct}%`,
                           width: `calc(${widthPct}% - 4px)`,
@@ -101,7 +136,6 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                         title={seg.title}
                         onClick={() => onSelectEvent?.(week[seg.startCol].date, seg.eventId)}
                       >
-                        {/* 图片背景时加遮罩保证文字可读 */}
                         {seg.bgImage && (
                           <div
                             className="absolute inset-0"
@@ -114,52 +148,30 @@ export function CalendarGrid({ weeks, events, selectedDate, onSelectDate, onSele
                         >
                           {seg.title}
                         </span>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
               )}
 
-              {/* ---- 日期格子层 ---- */}
-              <div
-                className="grid grid-cols-7 h-full relative z-20"
-                style={{ paddingTop: barsAreaHeight > 0 ? barsAreaHeight + 6 : 0 }}
-              >
-                {week.map((day) => {
-                  const isSelected = day.date === selectedDate
-
-                  return (
-                    <button
-                      key={day.date}
-                      onClick={() => onSelectDate(day.date)}
-                      className={`
-                        min-h-[56px] p-1.5 border-r text-left transition-colors
-                        ${!day.isCurrentMonth ? 'opacity-35' : ''}
-                        ${day.isToday ? 'ring-2 ring-inset' : ''}
-                        ${isSelected ? 'ring-2 ring-inset' : ''}
-                        hover:bg-gray-50 dark:hover:bg-gray-800/50
-                      `}
+              {/* ======== Layer 3: 日期数字层 (z-20, pointer-events-none) ======== */}
+              <div className="grid grid-cols-7 absolute inset-0 z-20 pointer-events-none">
+                {week.map((day) => (
+                  <div
+                    key={day.date}
+                    className="p-1.5 border-r border-b"
+                    style={{ borderColor: 'var(--border-color)' }}
+                  >
+                    <span
+                      className={`text-sm font-medium ${day.isToday ? 'font-bold' : ''} ${!day.isCurrentMonth ? 'opacity-35' : ''}`}
                       style={{
-                        borderColor: 'var(--border-color)',
-                        backgroundColor: day.isToday
-                          ? 'var(--today-bg)'
-                          : isSelected
-                            ? 'var(--bg-hover)'
-                            : 'transparent',
-                        '--tw-ring-color': day.isToday ? 'var(--today-border)' : '#6366F1',
-                      } as React.CSSProperties}
+                        color: day.isToday ? 'var(--today-border)' : 'var(--text-primary)',
+                      }}
                     >
-                      <span
-                        className={`text-sm font-medium ${day.isToday ? 'font-bold' : ''}`}
-                        style={{
-                          color: day.isToday ? 'var(--today-border)' : 'var(--text-primary)',
-                        }}
-                      >
-                        {day.day}
-                      </span>
-                    </button>
-                  )
-                })}
+                      {day.day}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )
