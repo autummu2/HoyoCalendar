@@ -20,8 +20,8 @@
   game: genshin-impact
   title: 「伴月同眠」祈愿：「空月归乡·哥伦比娅(水)」概率UP！
   type: 卡池
-  start_date: '2026-07-17'
-  end_date: '2026-07-27'
+  start_date: '2026-07-21'
+  end_date: '2026-08-11'
   color: '#c5e8fa'
   description: 活动期间，旅行者可以在活动祈愿中获得更多角色与武器，组建强大的队伍！ 〓祈愿介绍〓 ●活动期间， 限定 5星角色 「空月归乡·哥伦比娅(水)」 的祈愿获取概率将 大幅提升 ！ ●活动期间，4星角色 「系风攘影·雅珂达(风)」「深黯的谜烟·欧洛伦(雷)」「衡明知度·赛索斯(雷)」
     的祈愿获取概率将 大幅提升 ！ ※ 以上角色中，限定角色不会进入「奔行世间」常驻祈愿
@@ -36,3 +36,56 @@
   description: 〓活动奖励〓 〓活动时间〓 整体活动时间：2026/07/08 10:00 ~ 2026/08/11 03:59 紊乱爆发期：2026/07/08 10:00 ~ 2026/07/18 03:59 〓参与条件〓 冒险等阶≥20级
     且完成魔神任务：序章·第三幕「巨龙与自由之歌」 ※ 完成魔神任务「危途疑踪」后体验更佳
   source_url: https://www.miyoushe.com/ys/article/76483710
+- id: gi-版本无神怜爱的雪国前瞻特别节目
+  game: genshin-impact
+  title: 7.0版本「无神怜爱的雪国」前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-07-31'
+  end_date: '2026-07-31'
+  color: '#7dc4ea'
+- id: gi-版本停服更新
+  game: genshin-impact
+  title: 7.0版本停服更新
+  type: 版本更新
+  start_date: '2026-08-13'
+  end_date: '2026-08-13'
+  color: '#ffffff'
+- id: gi-影寂天下人祈愿-一心净土-雷电将军
+  game: genshin-impact
+  title: 「影寂天下人」祈愿：「一心净土·雷电将军(雷)」概率UP！
+  type: 常规活动
+  start_date: '2026-07-21'
+  end_date: '2026-08-11'
+  color: '#e0c8f2'
+  description: 活动期间，旅行者可以在活动祈愿中获得更多角色与武器，组建强大的队伍！ 〓祈愿介绍〓 ●活动期间， 限定 5星角色 「一心净土·雷电将军(雷)」 的祈愿获取概率将 大幅提升 ！ ●活动期间，4星角色 「系风攘影·雅珂达(风)」「深黯的谜烟·欧洛伦(雷)」「衡明知度·赛索斯(雷)」
+    的祈愿获取概率将 大幅提升 ！ ※ 以上角色中，限定角色不会进入「奔行世间」常驻祈愿
+- id: gi-七圣召唤热斗模式-自行巧局
+  game: genshin-impact
+  title: 「七圣召唤」热斗模式：自行巧局
+  type: 常规活动
+  start_date: '2026-07-18'
+  end_date: '2026-08-03'
+  color: '#fbe4bf'
+  description: 〓活动奖励〓 〓特殊规则〓 ● 在「热斗模式：自行巧局」下，旅行者需要 随机抽选角色牌与强力支援连续进行多场战斗
+  source_url: https://www.miyoushe.com/ys/article/76719185
+- id: gi-月幻想真境剧诗
+  game: genshin-impact
+  title: 7月幻想真境剧诗
+  type: 高难挑战
+  start_date: '2026-07-01'
+  end_date: '2026-07-31'
+  color: '#7888d3'
+- id: gi-月之八深境螺旋
+  game: genshin-impact
+  title: 7月深境螺旋
+  type: 高难挑战
+  start_date: '2026-07-16'
+  end_date: '2026-08-15'
+  color: '#8779d2'
+- id: gi-月之七深境螺旋
+  game: genshin-impact
+  title: 6月深境螺旋
+  type: 高难挑战
+  start_date: '2026-06-16'
+  end_date: '2026-07-15'
+  color: '#6f69d8'

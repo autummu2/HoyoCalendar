@@ -11,7 +11,6 @@ import { EventDetail } from './components/event/EventDetail'
 import { GameFilter } from './components/filter/GameFilter'
 import { TypeFilter } from './components/filter/TypeFilter'
 import { CompletionFilter } from './components/filter/CompletionFilter'
-import type { Game } from './types/events'
 
 type ViewMode = 'month' | 'week' | 'day'
 
@@ -27,9 +26,9 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
 
-  // ===== 筛选状态 =====
-  const [gameFilter, setGameFilter] = useState<Game[]>([])
-  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  // ===== 筛选状态（三态: undefined=无, 'include'=包含, 'exclude'=排除） =====
+  const [gameFilter, setGameFilter] = useState<Record<string, 'include' | 'exclude'>>({})
+  const [typeFilter, setTypeFilter] = useState<Record<string, 'include' | 'exclude'>>({})
   const [completionFilter, setCompletionFilter] = useState<('incomplete' | 'complete')[]>([])
 
   // ===== 完成状态 =====
@@ -49,11 +48,21 @@ export default function App() {
 
   // ===== 筛选后的活动 =====
   const filteredEvents = useMemo(() => {
-    // 选中 0 个或 2 个 = 全部；选中 1 个 = 仅该状态
     const completionActive = completionFilter.length === 1
+
+    const gameIncludes = Object.entries(gameFilter).filter(([, v]) => v === 'include').map(([k]) => k)
+    const gameExcludes = Object.entries(gameFilter).filter(([, v]) => v === 'exclude').map(([k]) => k)
+    const typeIncludes = Object.entries(typeFilter).filter(([, v]) => v === 'include').map(([k]) => k)
+    const typeExcludes = Object.entries(typeFilter).filter(([, v]) => v === 'exclude').map(([k]) => k)
+
     return events.filter((e) => {
-      if (gameFilter.length > 0 && !gameFilter.includes(e.game)) return false
-      if (typeFilter.length > 0 && !typeFilter.includes(e.type)) return false
+      // 游戏三态筛选
+      if (gameIncludes.length > 0 && !gameIncludes.includes(e.game)) return false
+      if (gameExcludes.includes(e.game)) return false
+      // 类型三态筛选
+      if (typeIncludes.length > 0 && !typeIncludes.includes(e.type)) return false
+      if (typeExcludes.includes(e.type)) return false
+      // 完成状态
       if (completionActive) {
         const done = isCompleted(e.id)
         if (completionFilter[0] === 'complete' && !done) return false
@@ -198,8 +207,8 @@ export default function App() {
         className="flex items-center gap-4 px-6 py-2 border-b flex-wrap"
         style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-surface)' }}
       >
-        <GameFilter selected={gameFilter} onChange={setGameFilter} />
-        <TypeFilter availableTypes={availableTypes} selected={typeFilter} onChange={setTypeFilter} />
+        <GameFilter state={gameFilter} onChange={setGameFilter} />
+        <TypeFilter availableTypes={availableTypes} state={typeFilter} onChange={setTypeFilter} />
         <CompletionFilter selected={completionFilter} onChange={setCompletionFilter} />
       </div>
 

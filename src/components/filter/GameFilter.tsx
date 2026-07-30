@@ -1,30 +1,36 @@
 import type { Game } from '../../types/events'
 import { GAME_META } from '../../types/events'
 
+type FilterState = Record<string, 'include' | 'exclude'>
+
 interface GameFilterProps {
-  selected: Game[]
-  onChange: (games: Game[]) => void
+  state: FilterState
+  onChange: (state: FilterState) => void
 }
 
 const ALL_GAMES = Object.keys(GAME_META) as Game[]
 
 /**
- * 游戏筛选器 — 横向按钮组
- * 点击切换选中状态，全部未选中 = 显示全部
+ * 游戏筛选器 — 三态按钮
+ * 点击循环: 无 → 包含(蓝) → 排除(红) → 无
  */
-export function GameFilter({ selected, onChange }: GameFilterProps) {
-  const isAll = selected.length === 0
-
-  const toggle = (game: Game) => {
-    if (selected.includes(game)) {
-      const next = selected.filter((g) => g !== game)
-      onChange(next)
+export function GameFilter({ state, onChange }: GameFilterProps) {
+  const toggle = (game: string) => {
+    const next = { ...state }
+    const current = next[game]
+    if (!current) {
+      next[game] = 'include'
+    } else if (current === 'include') {
+      next[game] = 'exclude'
     } else {
-      onChange([...selected, game])
+      delete next[game]
     }
+    onChange(next)
   }
 
-  const selectAll = () => onChange([])
+  const clearAll = () => onChange({})
+
+  const hasAny = Object.keys(state).length > 0
 
   return (
     <div className="flex items-center gap-1.5">
@@ -32,34 +38,38 @@ export function GameFilter({ selected, onChange }: GameFilterProps) {
         游戏
       </span>
 
-      {/* "全部" 按钮 */}
       <button
-        onClick={selectAll}
+        onClick={clearAll}
         className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-          isAll
+          !hasAny
             ? 'bg-gray-800 text-white border-gray-800 dark:bg-white dark:text-gray-800 dark:border-white'
             : 'border-gray-300 text-gray-500 hover:border-gray-400'
         }`}
-        style={!isAll ? { borderColor: 'var(--border-color)' } : {}}
+        style={hasAny ? { borderColor: 'var(--border-color)' } : {}}
       >
         全部
       </button>
 
       {ALL_GAMES.map((game) => {
         const meta = GAME_META[game]
-        const active = selected.includes(game)
+        const value = state[game]
+        const isInclude = value === 'include'
+        const isExclude = value === 'exclude'
+        const isActive = !!value
+
         return (
           <button
             key={game}
             onClick={() => toggle(game)}
             className="text-xs px-2.5 py-1 rounded-full border transition-colors"
             style={{
-              borderColor: active ? meta.color : 'var(--border-color)',
-              backgroundColor: active ? meta.color : 'transparent',
-              color: active ? '#fff' : 'var(--text-secondary)',
+              borderColor: isActive ? (isInclude ? meta.color : '#EF4444') : 'var(--border-color)',
+              backgroundColor: isActive ? (isInclude ? meta.color : '#FEE2E2') : 'transparent',
+              color: isActive ? (isInclude ? '#fff' : '#DC2626') : 'var(--text-secondary)',
             }}
           >
             {meta.name}
+            {isExclude ? ' ✕' : ''}
           </button>
         )
       })}
