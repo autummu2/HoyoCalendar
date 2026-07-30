@@ -31,15 +31,25 @@ GAME_META = {
 }
 
 EVENT_TYPES = [
-    ("version-main", "版本主题活动"),
-    ("banner", "卡池/祈愿"),
-    ("daily", "签到/每日活动"),
-    ("challenge", "挑战/高难活动"),
-    ("web-event", "网页联动活动"),
-    ("festival", "节日/周年庆典"),
-    ("reward", "福利/兑换码"),
-    ("update", "版本更新"),
+    ("卡池", "卡池"),
+    ("常规活动", "常规活动"),
+    ("版本大活动", "版本大活动"),
+    ("版本更新", "版本更新"),
+    ("网页活动", "网页活动"),
+    ("高难挑战", "高难挑战"),
 ]
+
+# 旧类型映射（英文key → 中文label），兼容已有数据
+LEGACY_TYPE_MAP = {
+    "banner": "卡池",
+    "version-main": "版本大活动",
+    "daily": "常规活动",
+    "challenge": "高难挑战",
+    "web-event": "网页活动",
+    "festival": "版本大活动",
+    "reward": "常规活动",
+    "update": "版本更新",
+}
 
 
 def load_events(game_id: str) -> list[dict]:

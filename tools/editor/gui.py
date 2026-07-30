@@ -13,7 +13,7 @@ import re
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 
-from yaml_io import load_events, save_events, list_games, EVENT_TYPES, GAME_FILES, DATA_DIR, PROJECT_ROOT
+from yaml_io import load_events, save_events, list_games, EVENT_TYPES, LEGACY_TYPE_MAP, GAME_FILES, DATA_DIR, PROJECT_ROOT
 from extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
 
 TYPE_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "type_pool.json")
@@ -69,23 +69,24 @@ class EventEditor:
     # ─── 类型库 ──────────────────────────────────────────
 
     def _collect_all_types(self):
-        # 加载持久化的类型池（权威来源）
+        # 内置类型始终作为基底
+        seen = set()
+        for key, label in EVENT_TYPES:
+            seen.add(label)
+        # 从事件数据收集
+        for game_id in GAME_FILES:
+            events = load_events(game_id)
+            for ev in events:
+                t = ev.get("type", "")
+                if t:
+                    # 旧类型映射
+                    seen.add(LEGACY_TYPE_MAP.get(t, t))
+        # 加载持久化类型
         saved = self._load_type_state()
-        if saved:
-            self.type_pool = sorted(saved)
-        else:
-            # 首次启动：内置默认 + 事件扫描
-            seen = set()
-            for key, label in EVENT_TYPES:
-                seen.add(label)
-            for game_id in GAME_FILES:
-                events = load_events(game_id)
-                for ev in events:
-                    t = ev.get("type", "")
-                    if t:
-                        seen.add(t)
-            self.type_pool = sorted(seen)
-            self._save_type_state()
+        for t in saved:
+            seen.add(t)
+        self.type_pool = sorted(seen)
+        self._save_type_state()
 
     def _load_type_state(self) -> list[str]:
         try:
@@ -681,13 +682,13 @@ class EventEditor:
     # ─── 活动列表 ──────────────────────────────────────────
 
     def _type_label(self, type_val: str) -> str:
-        """将类型值转为显示标签（英文key→中文，自定义直接显示）"""
-        return dict(EVENT_TYPES).get(type_val, type_val)
+        """将类型值转为显示标签（旧英文key→中文，自定义直接显示）"""
+        return LEGACY_TYPE_MAP.get(type_val, dict(EVENT_TYPES).get(type_val, type_val))
 
     def _type_key(self, label: str) -> str:
-        """将显示标签转回类型值（中文→英文key，自定义直接返回）"""
-        rev = {v: k for k, v in EVENT_TYPES}
-        return rev.get(label, label)
+        """将显示标签转回类型值（直接返回，类型即标签）"""
+        # 当前系统类型即中文标签，直接返回
+        return label
 
     def _refresh_event_list(self):
         today = datetime.date.today()
