@@ -144,11 +144,11 @@ class EventEditor:
         self._cal_label.pack(side=tk.LEFT)
         ttk.Button(nav, text="▶", width=2, command=lambda: self._cal_nav(1)).pack(side=tk.LEFT, padx=2)
 
-        # 星期头
+        # 星期头（用 grid 保证和日期按钮对齐）
         wf = ttk.Frame(dlg)
         wf.pack()
-        for w in ["一", "二", "三", "四", "五", "六", "日"]:
-            ttk.Label(wf, text=w, width=3, anchor=tk.CENTER, font=FONT_SMALL).pack(side=tk.LEFT)
+        for c, w in enumerate(["一", "二", "三", "四", "五", "六", "日"]):
+            ttk.Label(wf, text=w, width=4, anchor=tk.CENTER, font=FONT_SMALL).grid(row=0, column=c)
 
         self._cal_grid = ttk.Frame(dlg)
         self._cal_grid.pack(pady=2)
@@ -177,10 +177,10 @@ class EventEditor:
         for r, week in enumerate(cal):
             for c, day in enumerate(week):
                 if day == 0:
-                    ttk.Label(self._cal_grid, text="", width=3).grid(row=r, column=c)
+                    ttk.Label(self._cal_grid, text="", width=4).grid(row=r, column=c)
                 else:
                     btn = ttk.Button(
-                        self._cal_grid, text=str(day), width=3,
+                        self._cal_grid, text=str(day), width=4,
                         command=lambda d=day: self._cal_select(year, month, d),
                     )
                     btn.grid(row=r, column=c, padx=1, pady=1)
