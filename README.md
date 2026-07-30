@@ -2,64 +2,32 @@
 
 一站式查看米哈游游戏活动日程的 Web 日历工具。
 
-🌐 **线上地址**: [hoyocalendar-nu.vercel.app](https://hoyocalendar-nu.vercel.app)
+🌐 **hoyocalendar-nu.vercel.app**
 
 ## 支持游戏
 
-- 原神 (Genshin Impact)
-- 崩坏：星穹铁道 (Honkai: Star Rail)
-- 绝区零 (Zenless Zone Zero)
+- 原神
+- 崩坏：星穹铁道
+- 绝区零
 
 ## 功能
 
-- 📅 **月/周/日三视图** — 灵活查看活动分布
-- 🎨 **活动独立配色** — 每个活动可自定义颜色
-- 🔍 **色条点击查看详情** — 连续色条显示活动名，点击展开详情
-- 🏷️ **三态筛选** — 游戏/类型 包含→排除→取消
-- ✅ **完成状态标记** — localStorage 持久化
-- 🌙 **暗色/亮色主题** — 默认跟随系统
+- 📅 **月/周/日视图** — 灵活切换，查看活动分布
+- 🎨 **活动色条** — 连续色条跨越天数，一眼看清活动起止
+- 🔍 **点击查看详情** — 点色条或日期，侧栏展开活动信息
+- 🏷️ **灵活筛选** — 按游戏、类型筛选；点一次只看，点两次排除
+- ✅ **完成标记** — 标记已完成活动，筛选时隐藏
+- 🌙 **暗色模式** — 默认跟随系统，可手动切换
 - 🔗 **活动链接** — 点击跳转官方公告
 
-## 数据编辑器（开发者工具）
+## 参与贡献
 
-```bash
-# 双击启动
-editor.bat
+活动数据由开发者维护，欢迎通过以下方式贡献：
 
-# 或命令行
-python tools/editor/gui.py
-```
+- 🐛 [提交 Issue](https://github.com/autummu2/HoyoCalendar/issues) — 报告 bug 或提出建议
+- 📋 [提交 PR](https://github.com/autummu2/HoyoCalendar/pulls) — 更新活动数据或改进代码
 
-- ✏️ 可视化管理活动数据，直接读写 YAML
-- 📥 公告解析：粘贴文本 / 米游社 API / Post ID，自动提取字段
-- 🚀 一键推送更新到 GitHub，Vercel 自动部署
-
-## 本地开发
-
-```bash
-npm install
-npm run dev      # 启动开发服务器
-npm run build    # 构建生产版本
-npm test         # 运行测试
-npm run lint     # 代码检查
-```
-
-## 技术栈
-
-React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + Zod 4
-Python 3 + tkinter + PyYAML + requests（编辑器）
-
-## 项目结构
-
-```
-HoyoCalendar/
-├── src/                  # 前端源码 (React)
-├── data/events/          # 活动数据 (YAML)
-├── tools/editor/         # Python 数据编辑器
-├── docs/                 # 文档
-├── editor.bat            # 一键启动编辑器
-└── DEVELOPMENT_PLAN.md   # 详细开发计划书
-```
+> 开发者文档见 [DEV.md](DEV.md)
 
 ## 许可证
 
