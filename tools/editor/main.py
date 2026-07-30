@@ -169,7 +169,8 @@ def _event_list(game_id: str):
         choice_items.append({"name": "  [bold]+ 新建活动[/bold]", "value": "new"})
         choice_items.append({"name": "↩ 返回游戏列表", "value": None})
 
-        sel = _style_choice(choice_items, default=str(len(events)) if events else None)
+        default = "new" if events else None
+        sel = _style_choice(choice_items, default=default)
 
         if sel is None:
             return
