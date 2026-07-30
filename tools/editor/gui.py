@@ -5,6 +5,8 @@
     python tools/editor/gui.py
 """
 
+import calendar
+import datetime
 import re
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
@@ -31,6 +33,7 @@ class EventEditor:
 
         # 标签库（跨游戏共享，启动时从所有 YAML 中收集）
         self.tag_pool: list[str] = []
+        self.selected_tag_names: list[str] = []
         self._collect_all_tags()
 
         self._build_ui()
@@ -50,6 +53,77 @@ class EventEditor:
     def _rebuild_tag_pool(self):
         self._collect_all_tags()
         self._refresh_tag_list()
+
+    # ─── 日期选择器 ──────────────────────────────────────
+
+    def _pick_date(self, entry: ttk.Entry):
+        """弹出日历窗口，选中日期后填入 entry"""
+        current = entry.get().strip()
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", current):
+            y, m, d = int(current[:4]), int(current[5:7]), int(current[8:10])
+        else:
+            today = datetime.date.today()
+            y, m, d = today.year, today.month, today.day
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title("选择日期")
+        dlg.geometry("260x240")
+        dlg.transient(self.root)
+        dlg.grab_set()
+        dlg.resizable(False, False)
+
+        nav = ttk.Frame(dlg)
+        nav.pack(pady=4)
+        ttk.Button(nav, text="◀", width=2, command=lambda: self._cal_nav(-1)).pack(side=tk.LEFT, padx=2)
+        self._cal_label = ttk.Label(nav, text="", font=FONT_BOLD, width=16, anchor=tk.CENTER)
+        self._cal_label.pack(side=tk.LEFT)
+        ttk.Button(nav, text="▶", width=2, command=lambda: self._cal_nav(1)).pack(side=tk.LEFT, padx=2)
+
+        # 星期头
+        wf = ttk.Frame(dlg)
+        wf.pack()
+        for w in ["一", "二", "三", "四", "五", "六", "日"]:
+            ttk.Label(wf, text=w, width=3, anchor=tk.CENTER, font=FONT_SMALL).pack(side=tk.LEFT)
+
+        self._cal_grid = ttk.Frame(dlg)
+        self._cal_grid.pack(pady=2)
+        self._cal_year = y
+        self._cal_month = m
+        self._cal_entry = entry
+        self._cal_dlg = dlg
+        self._cal_render(y, m)
+
+    def _cal_nav(self, delta: int):
+        self._cal_month += delta
+        if self._cal_month > 12:
+            self._cal_month = 1
+            self._cal_year += 1
+        elif self._cal_month < 1:
+            self._cal_month = 12
+            self._cal_year -= 1
+        self._cal_render(self._cal_year, self._cal_month)
+
+    def _cal_render(self, year: int, month: int):
+        self._cal_label.config(text=f"{year}年 {month}月")
+        for w in self._cal_grid.winfo_children():
+            w.destroy()
+
+        cal = calendar.monthcalendar(year, month)
+        for r, week in enumerate(cal):
+            for c, day in enumerate(week):
+                if day == 0:
+                    ttk.Label(self._cal_grid, text="", width=3).grid(row=r, column=c)
+                else:
+                    btn = ttk.Button(
+                        self._cal_grid, text=str(day), width=3,
+                        command=lambda d=day: self._cal_select(year, month, d),
+                    )
+                    btn.grid(row=r, column=c, padx=1, pady=1)
+
+    def _cal_select(self, y: int, m: int, d: int):
+        self._cal_entry.delete(0, tk.END)
+        self._cal_entry.insert(0, f"{y}-{m:02d}-{d:02d}")
+        self._cal_dlg.destroy()
 
     # ─── UI 构建 ──────────────────────────────────────────
 
@@ -154,12 +228,16 @@ class EventEditor:
         date_row.grid(row=row, column=1, columnspan=2, sticky=tk.W, **PAD)
         self.entry_start = ttk.Entry(date_row, width=14, font=FONT)
         self.entry_start.pack(side=tk.LEFT)
+        ttk.Button(date_row, text="📅", width=3, command=lambda: self._pick_date(self.entry_start)).pack(side=tk.LEFT, padx=2)
         ttk.Label(date_row, text="YYYY-MM-DD", foreground="gray", font=FONT_SMALL).pack(side=tk.LEFT, padx=4)
         row += 1
 
         ttk.Label(right, text="结束", font=FONT_SMALL).grid(row=row, column=0, sticky=tk.W, **PAD)
-        self.entry_end = ttk.Entry(right, width=14, font=FONT)
-        self.entry_end.grid(row=row, column=1, sticky=tk.W, **PAD)
+        date2_row = ttk.Frame(right)
+        date2_row.grid(row=row, column=1, columnspan=2, sticky=tk.W, **PAD)
+        self.entry_end = ttk.Entry(date2_row, width=14, font=FONT)
+        self.entry_end.pack(side=tk.LEFT)
+        ttk.Button(date2_row, text="📅", width=3, command=lambda: self._pick_date(self.entry_end)).pack(side=tk.LEFT, padx=2)
         row += 1
 
         # 描述
@@ -168,23 +246,41 @@ class EventEditor:
         self.text_desc.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
         row += 1
 
-        # 标签 — 多选列表
+        # 标签 — 搜索 + 多选列表 + 已选展示
         ttk.Label(right, text="标签", font=FONT_SMALL).grid(row=row, column=0, sticky=tk.NW, **PAD)
 
-        tag_frame = ttk.Frame(right)
-        tag_frame.grid(row=row, column=1, columnspan=2, sticky=tk.NSEW, **PAD)
+        tag_area = ttk.Frame(right)
+        tag_area.grid(row=row, column=1, columnspan=2, sticky=tk.NSEW, **PAD)
         right.rowconfigure(row, weight=1)
+        tag_area.columnconfigure(0, weight=1)
 
-        self.tag_listbox = tk.Listbox(tag_frame, selectmode=tk.MULTIPLE, font=FONT_SMALL, exportselection=False, height=6)
+        # 搜索框
+        self.tag_search_var = tk.StringVar()
+        self.tag_search_var.trace_add("write", lambda *a: self._filter_tags())
+        tag_search = ttk.Entry(tag_area, textvariable=self.tag_search_var, font=FONT_SMALL)
+        tag_search.grid(row=0, column=0, sticky=tk.EW, pady=(0, 2))
+        tag_search.insert(0, "")
+
+        # 过滤后的标签列表
+        tag_list_frame = ttk.Frame(tag_area)
+        tag_list_frame.grid(row=1, column=0, sticky=tk.NSEW)
+        tag_area.rowconfigure(1, weight=1)
+
+        self.tag_listbox = tk.Listbox(tag_list_frame, selectmode=tk.MULTIPLE, font=FONT_SMALL, exportselection=False, height=4)
         self.tag_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        tag_scroll = ttk.Scrollbar(tag_frame, orient=tk.VERTICAL, command=self.tag_listbox.yview)
+        self.tag_listbox.bind("<<ListboxSelect>>", self._on_tag_select)
+        tag_scroll = ttk.Scrollbar(tag_list_frame, orient=tk.VERTICAL, command=self.tag_listbox.yview)
         tag_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.tag_listbox.config(yscrollcommand=tag_scroll.set)
 
-        tag_btns = ttk.Frame(tag_frame)
+        tag_btns = ttk.Frame(tag_list_frame)
         tag_btns.pack(side=tk.RIGHT, fill=tk.Y, padx=(2, 0))
         ttk.Button(tag_btns, text="+", width=2, command=self._add_tag_to_pool).pack(pady=1)
         ttk.Button(tag_btns, text="✎", width=2, command=self._manage_tags).pack(pady=1)
+
+        # 已选标签展示
+        self.selected_tags_frame = ttk.Frame(tag_area)
+        self.selected_tags_frame.grid(row=2, column=0, sticky=tk.EW, pady=(4, 0))
         row += 1
 
         # 按钮
@@ -244,19 +340,81 @@ class EventEditor:
 
     # ─── 标签管理 ──────────────────────────────────────────
 
-    def _refresh_tag_list(self):
+    def _refresh_tag_list(self, tags: list[str] | None = None):
+        if tags is None:
+            self._filter_tags()
+            return
         self.tag_listbox.delete(0, tk.END)
-        for t in self.tag_pool:
+        for t in tags:
             self.tag_listbox.insert(tk.END, t)
 
-    def _set_tag_selection(self, event_tags: list[str]):
-        self.tag_listbox.selection_clear(0, tk.END)
-        for i, t in enumerate(self.tag_pool):
-            if t in event_tags:
+    def _filter_tags(self):
+        query = self.tag_search_var.get().strip().lower()
+        if not query:
+            filtered = self.tag_pool
+        else:
+            filtered = [t for t in self.tag_pool if query in t.lower()]
+        self.tag_listbox.delete(0, tk.END)
+        for t in filtered:
+            self.tag_listbox.insert(tk.END, t)
+        # Restore selection for visible tags
+        for i, t in enumerate(filtered):
+            if t in self.selected_tag_names:
                 self.tag_listbox.selection_set(i)
 
+    def _on_tag_select(self, event=None):
+        # Collect all selected tags from visible list
+        visible = self._get_visible_tags()
+        for i in self.tag_listbox.curselection():
+            tag = visible[i]
+            if tag not in self.selected_tag_names:
+                self.selected_tag_names.append(tag)
+        # Remove deselected (tags in selected_tag_names but not in selection AND still visible)
+        for i, tag in enumerate(visible):
+            if tag in self.selected_tag_names and i not in self.tag_listbox.curselection():
+                self.selected_tag_names.remove(tag)
+        self._refresh_selected_tags_display()
+
+    def _get_visible_tags(self) -> list[str]:
+        return [self.tag_listbox.get(i) for i in range(self.tag_listbox.size())]
+
     def _get_selected_tags(self) -> list[str]:
-        return [self.tag_pool[i] for i in self.tag_listbox.curselection()]
+        return list(self.selected_tag_names)
+
+    def _refresh_selected_tags_display(self):
+        for w in self.selected_tags_frame.winfo_children():
+            w.destroy()
+        if not self.selected_tag_names:
+            ttk.Label(self.selected_tags_frame, text="(未选择)", foreground="gray", font=FONT_SMALL).pack(anchor=tk.W)
+            return
+        for tag in self.selected_tag_names:
+            chip = ttk.Frame(self.selected_tags_frame)
+            chip.pack(side=tk.LEFT, padx=(0, 3), pady=1)
+            ttk.Label(chip, text=tag, font=FONT_SMALL, background="#E0E7FF", foreground="#3730A3",
+                      padding=(4, 1)).pack(side=tk.LEFT)
+            btn = ttk.Button(chip, text="×", width=2,
+                             command=lambda t=tag: self._remove_selected_tag(t))
+            btn.pack(side=tk.LEFT)
+
+    def _remove_selected_tag(self, tag: str):
+        if tag in self.selected_tag_names:
+            self.selected_tag_names.remove(tag)
+        # Update listbox selection
+        query = self.tag_search_var.get().strip().lower()
+        visible = self.tag_pool if not query else [t for t in self.tag_pool if query in t.lower()]
+        for i, t in enumerate(visible):
+            if t == tag:
+                self.tag_listbox.selection_clear(i)
+        self._refresh_selected_tags_display()
+
+    def _set_tag_selection(self, event_tags: list[str]):
+        self.selected_tag_names = list(event_tags)
+        self.tag_listbox.selection_clear(0, tk.END)
+        visible = self._get_visible_tags()
+        for i, t in enumerate(visible):
+            if t in event_tags:
+                self.tag_listbox.selection_set(i)
+        self._refresh_selected_tags_display()
 
     def _add_tag_to_pool(self):
         dlg = tk.Toplevel(self.root)
@@ -338,6 +496,7 @@ class EventEditor:
             return
         self.current_game = self.games[sel[0]]["id"]
         self.events = load_events(self.current_game)
+        self.tag_search_var.set("")
         self._rebuild_tag_pool()
         self._refresh_event_list()
         self._clear_form()
@@ -430,7 +589,9 @@ class EventEditor:
         self.text_desc.delete("1.0", tk.END)
         self.spin_r.set(""); self.spin_g.set(""); self.spin_b.set("")
         self.color_preview.config(bg=self.root.cget("bg"))
+        self.selected_tag_names = []
         self.tag_listbox.selection_clear(0, tk.END)
+        self._refresh_selected_tags_display()
 
     def _revert_form(self):
         if self.selected_index is not None and self.selected_index < len(self.events):
