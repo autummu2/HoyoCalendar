@@ -632,11 +632,12 @@ class EventEditor:
     # ─── 表单 ──────────────────────────────────────────────
 
     def _load_form(self, ev: dict):
-        type_map_rev = {label: key for key, label in EVENT_TYPES}
+        type_map = dict(EVENT_TYPES)
 
         self.entry_title.delete(0, tk.END)
         self.entry_title.insert(0, ev.get("title", ""))
-        self.combo_type.set(type_map_rev.get(ev.get("type", "version-main"), "版本主题活动"))
+        type_label = type_map.get(ev.get("type", ""), EVENT_TYPES[0][1])
+        self.combo_type.set(type_label)
 
         color = ev.get("color", "")
         self.entry_color.delete(0, tk.END)
