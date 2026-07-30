@@ -524,6 +524,10 @@ class EventEditor:
             if messagebox.askyesno("确认", f"删除标签「{name}」?\n将从所有活动中移除。", parent=dlg):
                 self._remove_tag_from_all_events(name)
                 self.tag_pool.remove(name)
+                # 同步当前编辑活动中的标签选择
+                if name in self.selected_tag_names:
+                    self.selected_tag_names.remove(name)
+                    self._refresh_selected_tags_display()
                 self._refresh_tag_list()
                 lb.delete(sel[0])
                 self.status.config(text=f"已删除标签: {name}")
@@ -543,9 +547,12 @@ class EventEditor:
                     changed = True
             if changed:
                 save_events(game_id, events)
-                # 如果当前正在编辑这个游戏，同步刷新内存数据
+                # 如果当前正在编辑这个游戏，同步刷新内存数据和表单
                 if game_id == self.current_game:
                     self.events = load_events(game_id)
+                    if self.selected_index is not None and self.selected_index < len(self.events):
+                        self.selected_tag_names = list(self.events[self.selected_index].get("tags", []))
+                        self._refresh_selected_tags_display()
 
     def _manage_types(self):
         dlg = tk.Toplevel(self.root)
@@ -1005,7 +1012,12 @@ class EventEditor:
             ev["id"] = self._auto_id(title, start)
 
         save_events(self.current_game, self.events)
-        self._rebuild_tag_pool()
+        # 保存后同步标签库（新标签自动加入）
+        for t in tags:
+            if t not in self.tag_pool:
+                self.tag_pool.append(t)
+        self.tag_pool.sort()
+        self._refresh_tag_list()
         self._refresh_event_list()
         self._refresh_game_list()
         # 找到保存活动在显示列表中的位置
