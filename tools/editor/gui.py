@@ -336,6 +336,12 @@ class EventEditor:
         self.text_desc.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
         row += 1
 
+        # 网页链接
+        ttk.Label(right, text="链接", font=FONT_SMALL).grid(row=row, column=0, sticky=tk.W, **PAD)
+        self.entry_link = ttk.Entry(right, font=FONT)
+        self.entry_link.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
+        row += 1
+
         # 标签 — 搜索 + 多选列表 + 已选展示
         ttk.Label(right, text="标签", font=FONT_SMALL).grid(row=row, column=0, sticky=tk.NW, **PAD)
 
@@ -804,13 +810,15 @@ class EventEditor:
         self.entry_end.insert(0, ev.get("end_date", ""))
         self.text_desc.delete("1.0", tk.END)
         self.text_desc.insert("1.0", ev.get("description", ""))
+        self.entry_link.delete(0, tk.END)
+        self.entry_link.insert(0, ev.get("source_url", ""))
 
         self._set_tag_selection(ev.get("tags", []))
         self._update_color_preview()
 
     def _clear_form(self):
         self.selected_index = None
-        for w in [self.entry_title, self.entry_color, self.entry_start, self.entry_end]:
+        for w in [self.entry_title, self.entry_color, self.entry_start, self.entry_end, self.entry_link]:
             w.delete(0, tk.END)
         self.combo_type.set(self.type_pool[0] if self.type_pool else "")
         self.text_desc.delete("1.0", tk.END)
@@ -1021,6 +1029,7 @@ class EventEditor:
         color = self.entry_color.get().strip()
         ev_type = self._type_key(self.combo_type.get())
         desc = self.text_desc.get("1.0", tk.END).strip()
+        link = self.entry_link.get().strip()
         tags = self._get_selected_tags()
 
         ev = self.events[self.selected_index]
@@ -1036,6 +1045,10 @@ class EventEditor:
             ev["description"] = desc
         else:
             ev.pop("description", None)
+        if link:
+            ev["source_url"] = link
+        else:
+            ev.pop("source_url", None)
         if tags:
             ev["tags"] = tags
         else:

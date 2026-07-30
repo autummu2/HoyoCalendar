@@ -2,11 +2,11 @@ import type { EventTypeId } from '../../types/events'
 import { EVENT_TYPE_META } from '../../types/events'
 
 interface TypeFilterProps {
-  selected: EventTypeId[]
-  onChange: (types: EventTypeId[]) => void
+  selected: string[]
+  onChange: (types: string[]) => void
 }
 
-const ALL_TYPES = Object.keys(EVENT_TYPE_META) as EventTypeId[]
+const ALL_TYPES = Object.keys(EVENT_TYPE_META) as string[]
 
 /**
  * 活动类型筛选器 — 横向按钮组
@@ -14,7 +14,7 @@ const ALL_TYPES = Object.keys(EVENT_TYPE_META) as EventTypeId[]
 export function TypeFilter({ selected, onChange }: TypeFilterProps) {
   const isAll = selected.length === 0
 
-  const toggle = (type: EventTypeId) => {
+  const toggle = (type: string) => {
     if (selected.includes(type)) {
       onChange(selected.filter((t) => t !== type))
     } else {
@@ -43,7 +43,7 @@ export function TypeFilter({ selected, onChange }: TypeFilterProps) {
       </button>
 
       {ALL_TYPES.map((type) => {
-        const meta = EVENT_TYPE_META[type]
+        const meta = EVENT_TYPE_META[type as EventTypeId] ?? { icon: '📌', label: type }
         const active = selected.includes(type)
         return (
           <button

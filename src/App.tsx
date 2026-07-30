@@ -11,7 +11,7 @@ import { EventDetail } from './components/event/EventDetail'
 import { GameFilter } from './components/filter/GameFilter'
 import { TypeFilter } from './components/filter/TypeFilter'
 import { CompletionFilter } from './components/filter/CompletionFilter'
-import type { Game, EventTypeId } from './types/events'
+import type { Game } from './types/events'
 
 type ViewMode = 'month' | 'week' | 'day'
 
@@ -29,7 +29,7 @@ export default function App() {
 
   // ===== 筛选状态 =====
   const [gameFilter, setGameFilter] = useState<Game[]>([])
-  const [typeFilter, setTypeFilter] = useState<EventTypeId[]>([])
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [completionFilter, setCompletionFilter] = useState<('incomplete' | 'complete')[]>([])
 
   // ===== 完成状态 =====

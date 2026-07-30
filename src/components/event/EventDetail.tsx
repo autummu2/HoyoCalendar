@@ -1,4 +1,4 @@
-import type { GameEvent } from '../../types/events'
+import type { GameEvent, EventTypeId } from '../../types/events'
 import { GAME_META, EVENT_TYPE_META } from '../../types/events'
 
 interface EventDetailProps {
@@ -49,7 +49,7 @@ export function EventDetail({ events, date, highlightedEventId, isCompleted, onT
       <ul className="space-y-3">
         {events.map((event) => {
           const gameMeta = GAME_META[event.game]
-          const typeMeta = EVENT_TYPE_META[event.type]
+          const typeMeta = EVENT_TYPE_META[event.type as EventTypeId] ?? { icon: '📌', label: event.type }
 
           return (
             <li
@@ -99,9 +99,22 @@ export function EventDetail({ events, date, highlightedEventId, isCompleted, onT
 
               {/* 描述 */}
               {event.description && (
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
                   {event.description}
                 </p>
+              )}
+
+              {/* 链接 */}
+              {event.source_url && (
+                <a
+                  href={event.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline inline-block mb-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  🔗 {new URL(event.source_url).hostname}
+                </a>
               )}
 
               {/* 标签 */}

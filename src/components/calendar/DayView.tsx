@@ -1,4 +1,4 @@
-import type { GameEvent } from '../../types/events'
+import type { GameEvent, EventTypeId } from '../../types/events'
 import { GAME_META, EVENT_TYPE_META } from '../../types/events'
 import { formatDayLabel } from '../layout/Header'
 
@@ -30,7 +30,7 @@ export function DayView({ date, events, highlightedEventId, isCompleted, onToggl
         <ul className="space-y-3 max-w-2xl">
           {events.map((event) => {
             const gameMeta = GAME_META[event.game]
-            const typeMeta = EVENT_TYPE_META[event.type]
+            const typeMeta = EVENT_TYPE_META[event.type as EventTypeId] ?? { icon: '📌', label: event.type }
             const isHighlighted = event.id === highlightedEventId
 
             return (
@@ -90,6 +90,19 @@ export function DayView({ date, events, highlightedEventId, isCompleted, onToggl
                   <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
                     {event.description}
                   </p>
+                )}
+
+                {/* 链接 */}
+                {event.source_url && (
+                  <a
+                    href={event.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:underline inline-block mb-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    🔗 {new URL(event.source_url).hostname}
+                  </a>
                 )}
 
                 {/* 标签 */}
