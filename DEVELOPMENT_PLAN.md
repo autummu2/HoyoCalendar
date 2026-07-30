@@ -1,9 +1,9 @@
 # 🎮 米游活动日历 (HoyoCalendar) — 开发计划书
 
-> **版本**: v0.1.0-draft  
+> **版本**: v0.2.0  
 > **创建日期**: 2026-07-28  
 > **最后更新**: 2026-07-29  
-> **状态**: 🚀 Sprint 1 进行中  
+> **状态**: ✅ Sprint 0-2 完成，Sprint 3 数据工具完成  
 > **产品经理**: AI辅助设计 + 人工确认
 
 ---
@@ -412,6 +412,13 @@ Git管理数据版本    数据录入后台          CMS系统
 | 📥 公告解析器 | `tools/editor/extractor.py` 集成于 GUI | 米游社API获取 + 文本提取 → 填入表单 | ✅ 已完成 |
 | ✏️ 可视化编辑器 | `tools/editor/` Python TUI | 终端交互式编辑，直接写入 YAML 文件 | ✅ 已完成 |
 | 🔗 解析→编辑工作流 | 解析弹窗 → 填入表单 | ✅ 已完成 |
+| 🏷️ 活动类型动态管理 | type_pool.json 持久化 + ✎ 管理弹窗 | ✅ 已完成 |
+| #️⃣ 标签动态管理 | 跨游戏共享标签库 + 搜索 + chip展示 | ✅ 已完成 |
+| 📅 日期选择器 | 📅 按钮弹出月历，年月导航 | ✅ 已完成 |
+| 🔍 活动列表筛选排序 | 按日期/标题/类型排序 + 范围/搜索 | ✅ 已完成 |
+| 🔗 活动链接字段 | 编辑器输入 + 前端可点击跳转 | ✅ 已完成 |
+| 🎨 选色器 | 系统色盘 + RGB Spinbox + 预览 | ✅ 已完成 |
+| 📦 一键启动 | editor.bat 双击打开编辑器 | ✅ 已完成 |
 | 🧪 解析器测试 | 多公告样本验证 | 覆盖不同游戏、不同活动类型的公告格式 |
 
 ---
@@ -484,19 +491,16 @@ chore(deps): 升级 vite 到最新版本
 ```
 HoyoCalendar/
 ├── .github/
-│   ├── workflows/          # CI/CD 工作流
-│   │   ├── ci.yml          # Lint + Test + Build
-│   │   ├── deploy.yml      # 部署到 Vercel/Pages
-│   │   └── data-validate.yml  # 数据文件校验
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── feature_request.md
-│   │   └── bug_report.md
-│   └── PULL_REQUEST_TEMPLATE.md
-├── src/                    # 前端源代码
-├── data/                   # 活动数据文件 (YAML/JSON)
-├── public/                 # 静态资源
-├── tests/                  # 测试文件
-├── docs/                   # 项目文档
+│   └── workflows/          # CI/CD 工作流 (ci.yml)
+├── src/                    # 前端源代码 (React)
+├── data/events/            # 活动 YAML 数据文件
+├── tools/
+│   └── editor/             # Python 编辑器 + 公告解析器
+│       ├── gui.py          # tkinter 图形界面
+│       ├── main.py         # 终端交互式界面
+│       ├── extractor.py    # 公告解析引擎 + 米游社 API
+│       └── yaml_io.py      # YAML 读写模块
+├── editor.bat              # 一键启动编辑器
 ├── CLAUDE.md               # AI 开发指引
 ├── DEVELOPMENT_PLAN.md     # ← 本文件
 └── README.md
@@ -781,10 +785,11 @@ git branch -d feature/calendar-grid
 | 开发规范 (13.x) | ✅ 已确认 |
 | Sprint 0 — 项目初始化 | ✅ 完成 (2026-07-29) |
 | Sprint 1 — 日历核心组件 | ✅ 完成 (2026-07-29, 13/13) |
-| Sprint 2 — 额外视图 & 上线部署 | ✅ 完成 (7/7) |
-| Sprint 3 — 数据工具 | 📋 已规划 |
+| Sprint 2 — 额外视图 & 上线部署 | ✅ 完成 (2026-07-29, 7/7) |
+| Sprint 3 — 数据工具 | ✅ 完成 (2026-07-29, 10/10) |
 | 当前分支 | `develop` |
-| 下一步 | 周/日视图 / 创建仓库 / CI / 部署 Vercel |
+| 线上地址 | https://hoyocalendar-nu.vercel.app |
+| 下一步 | 公告解析器测试 / 数据维护 |
 
 ---
 
