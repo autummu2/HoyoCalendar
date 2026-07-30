@@ -8,3 +8,39 @@
   description: ▌「幻造：圣杯战争」活动说明 一场黄金雨，一尊失窃的圣杯——在另一片幻月遍照不到的阴影中，某位王者的宝库竟意外分崩离析
   tags:
   - 联动
+- id: hsr-位面分裂活动-位面饰品限时双倍掉落
+  game: honkai-star-rail
+  title: 「位面分裂」活动：位面饰品限时双倍掉落
+  type: 常规活动
+  start_date: '2026-07-27'
+  end_date: '2026-08-10'
+  color: '#eeeeee'
+  description: ▌活动时间 2026/07/27 04:00 - 2026/08/10 03:59 ▌参与条件 解锁「位面饰品」 ▌活动说明 ●「位面分裂」活动期间，在「模拟宇宙」中获取沉浸奖励或进行「饰品提取」时，可获得双倍奖励
+- id: hsr-反贪砖家活动说明
+  game: honkai-star-rail
+  title: 「反贪『砖』家」活动说明
+  type: 常规活动
+  start_date: '2026-07-15'
+  end_date: '2026-08-26'
+  color: '#defeef'
+- id: hsr-版本停服更新
+  game: honkai-star-rail
+  title: 4.4版本停服更新
+  type: 版本更新
+  start_date: '2026-07-15'
+  end_date: '2026-07-15'
+  color: '#ffffff'
+- id: hsr-版本停服更新
+  game: honkai-star-rail
+  title: 4.5版本停服更新
+  type: 版本更新
+  start_date: '2026-08-26'
+  end_date: '2026-08-26'
+  color: '#ffffff'
+- id: hsr-姬子-启行-智识
+  game: honkai-star-rail
+  title: 「姬子•启行（智识•火）」跃迁
+  type: 卡池
+  start_date: '2026-07-15'
+  end_date: '2026-08-25'
+  color: '#f79595'
