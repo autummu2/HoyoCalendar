@@ -17,7 +17,7 @@ import requests
 
 GIDS_MAP = {
     "genshin-impact": 2,
-    "honkai-star-rail": 5,
+    "honkai-star-rail": 6,
     "zenless-zone-zero": 8,
     "honkai-impact-3rd": 1,
     "tears-of-themis": 4,
