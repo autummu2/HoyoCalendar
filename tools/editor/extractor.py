@@ -7,6 +7,7 @@
 """
 
 import datetime
+import json
 import re
 import html as html_mod
 
@@ -77,13 +78,51 @@ DATE_PATTERNS = [
 
 def html_to_text(html: str) -> str:
     """去除 HTML 标签，返回纯文本"""
-    # 移除标签
     text = re.sub(r"<[^>]+>", " ", html)
-    # 解码 HTML 实体
     text = html_mod.unescape(text)
-    # 压缩空白
     text = re.sub(r"\s+", " ", text).strip()
     return text
+
+
+def _extract_post_text(content: str, post: dict) -> str:
+    """从帖子内容中提取纯文本（兼容不同游戏的内容格式）
+
+    原神: HTML <div>...<p>text</p>...</div>
+    ZZZ/HSR: JSON {"describe":"text", "imgs":[...]}
+    通版: structured_content [{"insert":"text"},...]
+    """
+    # 1. 尝试 JSON 格式 (ZZZ/HSR)
+    if content.startswith("{") and '"describe"' in content:
+        try:
+            obj = json.loads(content)
+            describe = obj.get("describe", "")
+            if describe:
+                return describe.strip()
+        except json.JSONDecodeError:
+            pass
+
+    # 2. 尝试 structured_content 字段
+    sc = post.get("structured_content", "")
+    if sc:
+        try:
+            if isinstance(sc, str):
+                sc = json.loads(sc)
+            if isinstance(sc, list):
+                parts = [item.get("insert", "") for item in sc if isinstance(item, dict)]
+                text = "".join(parts).strip()
+                if text:
+                    return text
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # 3. HTML 格式 (原神)
+    if "<" in content:
+        text = html_to_text(content)
+        if text:
+            return text
+
+    # 4. 纯文本 / 兜底
+    return html_to_text(content) if "<" in content else content.strip()
 
 
 def fetch_post(post_id: int | str, game_id: str = "genshin-impact") -> dict | None:
@@ -114,10 +153,22 @@ def fetch_post(post_id: int | str, game_id: str = "genshin-impact") -> dict | No
         if not isinstance(post, dict):
             return {"error": "未找到 post 数据"}
         content = post.get("content", "") or ""
+        subject = post.get("subject", "") or ""
+
+        # 提取正文文本（不同游戏格式不同）
+        text = _extract_post_text(content, post)
+
+        # 如果标题为空，尝试从正文提取
+        if not subject and text:
+            # 取正文第一句作为标题
+            first_sent = text.split("。")[0].strip()
+            if len(first_sent) > 4:
+                subject = first_sent[:60]
+
         return {
-            "subject": post.get("subject", ""),
+            "subject": subject,
             "content": content,
-            "text": html_to_text(content),
+            "text": text,
             "post_id": str(post.get("post_id", post_id)),
             "created_at": post.get("created_at", 0),
         }
