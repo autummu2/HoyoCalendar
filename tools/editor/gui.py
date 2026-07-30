@@ -543,6 +543,9 @@ class EventEditor:
                     changed = True
             if changed:
                 save_events(game_id, events)
+                # 如果当前正在编辑这个游戏，同步刷新内存数据
+                if game_id == self.current_game:
+                    self.events = load_events(game_id)
 
     def _manage_types(self):
         dlg = tk.Toplevel(self.root)
