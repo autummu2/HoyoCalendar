@@ -35,11 +35,14 @@ class EventEditor:
         # 标签库（跨游戏共享，启动时从所有 YAML 中收集）
         self.tag_pool: list[str] = []
         self.selected_tag_names: list[str] = []
+        # 类型库（同标签逻辑：从数据中动态收集，可增删，单选）
+        self.type_pool: list[str] = []
         self.event_filter_map: list[int] = []  # display_index → real_index
         self.event_sort = tk.StringVar(value="date")
         self.event_filter_range = tk.StringVar(value="all")
         self.event_search_var = tk.StringVar()
         self._collect_all_tags()
+        self._collect_all_types()
 
         self._build_ui()
         self._refresh_game_list()
@@ -58,6 +61,29 @@ class EventEditor:
     def _rebuild_tag_pool(self):
         self._collect_all_tags()
         self._refresh_tag_list()
+
+    # ─── 类型库 ──────────────────────────────────────────
+
+    def _collect_all_types(self):
+        seen = set()
+        # 内置默认类型作为基底
+        for key, label in EVENT_TYPES:
+            seen.add(label)
+        # 从所有活动中收集
+        for game_id in GAME_FILES:
+            events = load_events(game_id)
+            for ev in events:
+                t = ev.get("type", "")
+                if t:
+                    seen.add(t)
+        self.type_pool = sorted(seen)
+
+    def _rebuild_type_pool(self):
+        self._collect_all_types()
+        self._refresh_type_combo()
+
+    def _refresh_type_combo(self):
+        self.combo_type["values"] = self.type_pool
 
     # ─── 日期选择器 ──────────────────────────────────────
 
@@ -214,13 +240,17 @@ class EventEditor:
         self.entry_title.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
         row += 1
 
-        # 类型 — 加宽下拉框
+        # 类型 — 动态下拉框 + 管理按钮
         ttk.Label(right, text="类型", font=FONT_SMALL).grid(row=row, column=0, sticky=tk.W, **PAD)
+        type_row = ttk.Frame(right)
+        type_row.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
+        type_row.columnconfigure(0, weight=1)
         self.combo_type = ttk.Combobox(
-            right, values=[label for _, label in EVENT_TYPES], state="readonly", font=FONT,
+            type_row, values=self.type_pool, state="readonly", font=FONT,
         )
-        self.combo_type.grid(row=row, column=1, columnspan=2, sticky=tk.EW, **PAD)
-        self.combo_type.set(EVENT_TYPES[0][1])
+        self.combo_type.grid(row=0, column=0, sticky=tk.EW)
+        self.combo_type.set(self.type_pool[0] if self.type_pool else "")
+        ttk.Button(type_row, text="✎", width=2, command=self._manage_types).grid(row=0, column=1, padx=(2, 0))
         row += 1
 
         # 颜色: hex + 选色按钮 + 预览 + RGB
@@ -514,6 +544,71 @@ class EventEditor:
             if changed:
                 save_events(game_id, events)
 
+    def _manage_types(self):
+        dlg = tk.Toplevel(self.root)
+        dlg.title("管理活动类型")
+        dlg.geometry("300x350")
+        dlg.transient(self.root)
+        dlg.grab_set()
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        dlg.geometry(f"300x350+{rx+(rw-300)//2}+{ry+(rh-350)//2}")
+
+        ttk.Label(dlg, text="活动类型库（跨游戏共享）", font=FONT_BOLD).pack(padx=12, pady=(12, 4))
+        ttk.Label(dlg, text="删除类型前需处理使用该类型的活动", foreground="gray", font=FONT_SMALL).pack(padx=12)
+
+        lb = tk.Listbox(dlg, font=FONT)
+        lb.pack(padx=12, fill=tk.BOTH, expand=True, pady=4)
+        for t in self.type_pool:
+            lb.insert(tk.END, t)
+
+        # 添加
+        add_frame = ttk.Frame(dlg)
+        add_frame.pack(fill=tk.X, padx=12, pady=4)
+        add_entry = ttk.Entry(add_frame, font=FONT)
+        add_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(add_frame, text="添加", command=lambda: do_add()).pack(side=tk.LEFT, padx=4)
+
+        def do_add():
+            name = add_entry.get().strip()
+            if name and name not in self.type_pool:
+                self.type_pool.append(name)
+                self.type_pool.sort()
+                self._refresh_type_combo()
+                lb.insert(tk.END, name)
+                # re-sort listbox
+                lb.delete(0, tk.END)
+                for t in self.type_pool:
+                    lb.insert(tk.END, t)
+            add_entry.delete(0, tk.END)
+
+        def do_delete():
+            sel = lb.curselection()
+            if not sel:
+                return
+            name = self.type_pool[sel[0]]
+            # 检查使用此类型的活动数量
+            count = 0
+            for game_id in GAME_FILES:
+                events = load_events(game_id)
+                for ev in events:
+                    if ev.get("type") == name:
+                        count += 1
+            if count > 0:
+                ok = messagebox.askyesno("确认删除",
+                    f"类型「{name}」被 {count} 个活动使用。\n"
+                    f"删除后这些活动的类型不变，但将从可选列表中移除。\n确认删除?",
+                    parent=dlg)
+                if not ok:
+                    return
+            self.type_pool.remove(name)
+            self._refresh_type_combo()
+            lb.delete(sel[0])
+            self.status.config(text=f"已删除类型: {name}")
+
+        ttk.Button(dlg, text="🗑 删除选中类型", command=do_delete).pack(pady=8)
+        add_entry.bind("<Return>", lambda e: do_add())
+
     # ─── 游戏列表 ──────────────────────────────────────────
 
     def _refresh_game_list(self):
@@ -529,14 +624,24 @@ class EventEditor:
         self.current_game = self.games[sel[0]]["id"]
         self.events = load_events(self.current_game)
         self.tag_search_var.set("")
+        self._collect_all_types()
+        self._refresh_type_combo()
         self._rebuild_tag_pool()
         self._refresh_event_list()
         self._clear_form()
 
     # ─── 活动列表 ──────────────────────────────────────────
 
+    def _type_label(self, type_val: str) -> str:
+        """将类型值转为显示标签（英文key→中文，自定义直接显示）"""
+        return dict(EVENT_TYPES).get(type_val, type_val)
+
+    def _type_key(self, label: str) -> str:
+        """将显示标签转回类型值（中文→英文key，自定义直接返回）"""
+        rev = {v: k for k, v in EVENT_TYPES}
+        return rev.get(label, label)
+
     def _refresh_event_list(self):
-        type_map = dict(EVENT_TYPES)
         today = datetime.date.today()
         search = self.event_search_var.get().strip().lower()
 
@@ -568,7 +673,7 @@ class EventEditor:
         elif sort_key == "按标题":
             filtered.sort(key=lambda x: x[1].get("title", ""))
         elif sort_key == "按类型":
-            filtered.sort(key=lambda x: type_map.get(x[1].get("type", ""), ""))
+            filtered.sort(key=lambda x: self._type_label(x[1].get("type", "")))
         else:
             filtered.sort(key=lambda x: x[1].get("start_date", ""))
 
@@ -580,7 +685,7 @@ class EventEditor:
                 "", tk.END, iid=str(di),
                 values=(
                     ev.get("title", ""),
-                    type_map.get(ev.get("type", ""), ""),
+                    self._type_label(ev.get("type", "")),
                     f"{ev.get('start_date','')} ~ {ev.get('end_date','')}",
                     ev.get("id", ""),
                 ),
@@ -599,9 +704,10 @@ class EventEditor:
         if not self.current_game:
             messagebox.showwarning("提示", "请先选择游戏")
             return
+        default_type = self._type_key(self.type_pool[0]) if self.type_pool else "version-main"
         self.events.append({
             "id": "", "game": self.current_game, "title": "",
-            "type": "version-main", "start_date": "", "end_date": "",
+            "type": default_type, "start_date": "", "end_date": "",
         })
         self.selected_index = len(self.events) - 1
         self._refresh_event_list()
@@ -632,11 +738,14 @@ class EventEditor:
     # ─── 表单 ──────────────────────────────────────────────
 
     def _load_form(self, ev: dict):
-        type_map = dict(EVENT_TYPES)
-
         self.entry_title.delete(0, tk.END)
         self.entry_title.insert(0, ev.get("title", ""))
-        type_label = type_map.get(ev.get("type", ""), EVENT_TYPES[0][1])
+        type_label = self._type_label(ev.get("type", ""))
+        # 确保 label 在 pool 中
+        if type_label not in self.type_pool:
+            self.type_pool.append(type_label)
+            self.type_pool.sort()
+            self._refresh_type_combo()
         self.combo_type.set(type_label)
 
         color = ev.get("color", "")
@@ -661,7 +770,7 @@ class EventEditor:
         self.selected_index = None
         for w in [self.entry_title, self.entry_color, self.entry_start, self.entry_end]:
             w.delete(0, tk.END)
-        self.combo_type.set(EVENT_TYPES[0][1])
+        self.combo_type.set(self.type_pool[0] if self.type_pool else "")
         self.text_desc.delete("1.0", tk.END)
         self.spin_r.set(""); self.spin_g.set(""); self.spin_b.set("")
         self.color_preview.config(bg=self.root.cget("bg"))
@@ -796,9 +905,8 @@ class EventEditor:
                 parsed_data["title"] = result["subject"]
 
             # 更新预览
-            type_map = dict(EVENT_TYPES)
             result_labels["title"].config(text=parsed_data.get("title", "(未识别)")[:60])
-            result_labels["type"].config(text=type_map.get(parsed_data.get("type", ""), "(未识别)"))
+            result_labels["type"].config(text=self._type_label(parsed_data.get("type", "")))
             result_labels["start_date"].config(text=parsed_data.get("start_date", "(未识别)"))
             result_labels["end_date"].config(text=parsed_data.get("end_date", "(未识别)"))
             desc = parsed_data.get("description", "")
@@ -809,18 +917,24 @@ class EventEditor:
             if not parsed_data or not self.current_game:
                 return
             # 先创建空白活动条目（内部会设 selected_index 并加载空白表单）
+            default_type = self._type_key(self.type_pool[0]) if self.type_pool else "version-main"
             self.events.append({
                 "id": "", "game": self.current_game, "title": "",
-                "type": "version-main", "start_date": "", "end_date": "",
+                "type": default_type, "start_date": "", "end_date": "",
             })
             self.selected_index = len(self.events) - 1
             self._refresh_event_list()
             # 用解析结果填充表单
             self.entry_title.delete(0, tk.END)
             self.entry_title.insert(0, parsed_data.get("title", ""))
-            type_map = {key: label for key, label in EVENT_TYPES}
             if parsed_data.get("type"):
-                self.combo_type.set(type_map.get(parsed_data["type"], EVENT_TYPES[0][1]))
+                type_label = self._type_label(parsed_data["type"])
+                # 确保在 pool 中
+                if type_label not in self.type_pool:
+                    self.type_pool.append(type_label)
+                    self.type_pool.sort()
+                    self._refresh_type_combo()
+                self.combo_type.set(type_label)
             if parsed_data.get("start_date"):
                 self.entry_start.delete(0, tk.END)
                 self.entry_start.insert(0, parsed_data["start_date"])
@@ -863,8 +977,7 @@ class EventEditor:
             return
 
         color = self.entry_color.get().strip()
-        type_map_rev = {label: key for key, label in EVENT_TYPES}
-        ev_type = type_map_rev.get(self.combo_type.get(), "version-main")
+        ev_type = self._type_key(self.combo_type.get())
         desc = self.text_desc.get("1.0", tk.END).strip()
         tags = self._get_selected_tags()
 
