@@ -1,1 +1,10 @@
-[]
+- id: hsr-幻造-圣杯战争活动说明
+  game: honkai-star-rail
+  title: 「幻造：圣杯战争」活动说明
+  type: 常规活动
+  start_date: '2026-07-24'
+  end_date: '2026-08-26'
+  color: '#f79f9f'
+  description: ▌「幻造：圣杯战争」活动说明 一场黄金雨，一尊失窃的圣杯——在另一片幻月遍照不到的阴影中，某位王者的宝库竟意外分崩离析
+  tags:
+  - 联动

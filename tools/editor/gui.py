@@ -979,12 +979,11 @@ class EventEditor:
             self.entry_title.insert(0, parsed_data.get("title", ""))
             if parsed_data.get("type"):
                 type_label = self._type_label(parsed_data["type"])
-                # 确保在 pool 中
-                if type_label not in self.type_pool:
-                    self.type_pool.append(type_label)
-                    self.type_pool.sort()
-                    self._refresh_type_combo()
-                self.combo_type.set(type_label)
+                # 如果提取的类型不在当前池中（可能已被用户删除），使用默认
+                if type_label in self.type_pool:
+                    self.combo_type.set(type_label)
+                else:
+                    self.combo_type.set(self.type_pool[0] if self.type_pool else type_label)
             if parsed_data.get("start_date"):
                 self.entry_start.delete(0, tk.END)
                 self.entry_start.insert(0, parsed_data["start_date"])
