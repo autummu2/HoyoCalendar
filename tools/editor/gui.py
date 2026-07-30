@@ -667,39 +667,68 @@ class EventEditor:
         add_entry.bind("<Return>", lambda e: do_add())
 
     def _git_push(self):
-        """推送数据更新到 GitHub"""
-        # 检查 git 是否可用
+        """推送数据更新到 GitHub（严格检查模式）"""
+        # 1. 检查 git 是否可用
         try:
             subprocess.run(["git", "--version"], capture_output=True, check=True, cwd=PROJECT_ROOT)
         except (subprocess.CalledProcessError, FileNotFoundError):
             messagebox.showerror("错误", "未找到 git，请确认已安装并添加到 PATH")
             return
 
-        # 检查数据文件是否有变更
-        result = subprocess.run(
-            ["git", "status", "--porcelain", "data/events/"],
+        # 2. 检查当前是否在 develop 分支
+        branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
             capture_output=True, text=True, cwd=PROJECT_ROOT,
         )
-        changed = [l for l in result.stdout.strip().split("\n") if l.strip()]
-        if not changed:
+        current_branch = branch_result.stdout.strip()
+        if current_branch != "develop":
+            messagebox.showerror("错误",
+                f"当前在 {current_branch} 分支，推送仅支持 develop。\n"
+                f"请先切换: git checkout develop")
+            return
+
+        # 3. 检查工作区状态 — 只允许 data/events/ 有改动
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True, text=True, cwd=PROJECT_ROOT,
+        )
+        all_changed = status_result.stdout.strip().split("\n")
+        data_changed = [l for l in all_changed if "data/events/" in l]
+        other_changed = [l for l in all_changed if "data/events/" not in l and l.strip()]
+
+        if not data_changed:
             messagebox.showinfo("提示", "数据文件无变更，无需推送")
             return
 
-        # 确认
-        msg = f"将推送 {len(changed)} 个文件的更新:\n\n"
-        for c in changed[:8]:
-            msg += f"  {c}\n"
-        if len(changed) > 8:
-            msg += f"  ... 等 {len(changed)} 个文件\n"
-
-        if not messagebox.askyesno("确认推送", msg + "\n推送到 origin/develop？"):
+        if other_changed:
+            msg = "工作区有以下非数据文件的改动:\n\n"
+            for c in other_changed[:6]:
+                msg += f"  {c}\n"
+            msg += "\n请先处理这些改动（提交或撤销），再推送数据更新。"
+            messagebox.showerror("推送被拒绝", msg)
             return
 
-        # add → commit → push
+        # 4. 确认推送
+        msg = f"将推送 {len(data_changed)} 个数据文件的更新:\n\n"
+        for c in data_changed[:8]:
+            msg += f"  {c}\n"
+        if len(data_changed) > 8:
+            msg += f"  ... 等 {len(data_changed)} 个文件\n"
+
+        if not messagebox.askyesno("确认推送", msg + "\n推送数据到 GitHub 并更新网页？"):
+            return
+
         self.status.config(text="推送中...")
         self.root.update()
 
+        # 5. pull → add → commit → push develop → sync main
         try:
+            # 先拉取远程最新避免冲突
+            subprocess.run(
+                ["git", "pull", "origin", "develop"],
+                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+            )
+            # 提交数据文件
             subprocess.run(
                 ["git", "add", "data/events/"],
                 capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
@@ -708,16 +737,44 @@ class EventEditor:
                 ["git", "commit", "-m", "data: 更新活动数据"],
                 capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
             )
+            # 推送 develop
             subprocess.run(
                 ["git", "push", "origin", "develop"],
                 capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
             )
-            self.status.config(text="已推送到 GitHub → Vercel 自动部署中")
-            messagebox.showinfo("成功", "已推送到 origin/develop\nVercel 将自动部署更新")
+            # 同步到 main
+            subprocess.run(
+                ["git", "checkout", "main"],
+                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+            )
+            subprocess.run(
+                ["git", "pull", "origin", "main"],
+                capture_output=True, text=True, cwd=PROJECT_ROOT,
+            )
+            subprocess.run(
+                ["git", "merge", "develop"],
+                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+            )
+            subprocess.run(
+                ["git", "push", "origin", "main"],
+                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+            )
+            # 切回 develop
+            subprocess.run(
+                ["git", "checkout", "develop"],
+                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+            )
+            self.status.config(text="已推送 → Vercel 自动部署中")
+            messagebox.showinfo("成功", "数据已推送，Vercel 将自动部署更新")
         except subprocess.CalledProcessError as e:
             err = e.stderr or e.stdout or str(e)
             self.status.config(text="推送失败")
-            messagebox.showerror("推送失败", f"Git 操作失败:\n{err[:300]}")
+            subprocess.run(["git", "checkout", "develop"], capture_output=True, cwd=PROJECT_ROOT)
+            if "merge" in str(e).lower() or "conflict" in str(e).lower():
+                messagebox.showerror("推送失败",
+                    f"合并冲突，请手动处理:\n{err[:300]}")
+            else:
+                messagebox.showerror("推送失败", f"Git 操作失败:\n{err[:300]}")
 
     # ─── 游戏列表 ──────────────────────────────────────────
 
