@@ -76,6 +76,10 @@ git branch -d feature/my-feature
 - [ ] 无 console 报错
 - [ ] 如果是 UI 改动，暗色/亮色主题均正常
 
+### 提交与推送规则
+
+**禁止未经确认的提交和推送。** 每完成一个环节，等待用户确认后再执行 `git commit` 和 `git push`。不要自动连续提交。
+
 ---
 
 ## 🧠 行为准则
