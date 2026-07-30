@@ -67,7 +67,12 @@ class EventEditor:
 
         dlg = tk.Toplevel(self.root)
         dlg.title("选择日期")
-        dlg.geometry("260x240")
+        # 定位在编辑器窗口中央
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        x = rx + (rw - 260) // 2
+        y = ry + (rh - 240) // 2
+        dlg.geometry(f"260x240+{x}+{y}")
         dlg.transient(self.root)
         dlg.grab_set()
         dlg.resizable(False, False)
