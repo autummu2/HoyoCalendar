@@ -756,27 +756,31 @@ class EventEditor:
 
             if tab == 0:
                 text = text_area.get("1.0", tk.END)
-            elif tab == 2:
+            elif tab == 1:
                 sel = post_listbox.curselection()
                 posts = getattr(self, "_parser_posts", [])
-                if sel and posts and self.current_game:
-                    pid = posts[sel[0]]["post_id"]
-                    result = fetch_post(pid, self.current_game)
-                    if result and result.get("error"):
-                        messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
-                        return
-                    text = result.get("text", "") if result else ""
-            elif tab == 1:
+                if not sel or not posts:
+                    messagebox.showwarning("提示", "请先刷新公告列表并选择一篇公告", parent=dlg)
+                    return
+                pid = posts[sel[0]]["post_id"]
+                result = fetch_post(pid, self.current_game or "genshin-impact")
+                if result and result.get("error"):
+                    messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
+                    return
+                text = result.get("text", "") if result else ""
+            elif tab == 2:
                 pid = pid_entry.get().strip()
-                if pid and self.current_game:
-                    result = fetch_post(pid, self.current_game)
-                    if result and result.get("error"):
-                        messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
-                        return
-                    text = result.get("text", "") if result else ""
-                    if not text:
-                        messagebox.showwarning("提示", f"获取 post_id={pid} 失败，正文为空", parent=dlg)
-                        return
+                if not pid:
+                    messagebox.showwarning("提示", "请输入 post_id", parent=dlg)
+                    return
+                result = fetch_post(pid, self.current_game or "genshin-impact")
+                if result and result.get("error"):
+                    messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
+                    return
+                text = result.get("text", "") if result else ""
+                if not text:
+                    messagebox.showwarning("提示", f"获取 post_id={pid} 失败，正文为空", parent=dlg)
+                    return
 
             if not text.strip():
                 reason = result.get("error", "正文为空") if result else "未知错误"

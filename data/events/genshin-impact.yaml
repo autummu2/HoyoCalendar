@@ -1,61 +1,76 @@
-# data/events/genshin-impact.yaml
-# 原神活动数据 — 手动维护
-# color: 色条背景色，推荐浅色系（Tailwind 50/100 色阶），文字自动深色
-
-- id: "gi-4.0-version"
-  game: "genshin-impact"
-  title: "「仿若无因飘落的轻雨」4.0 版本"
-  type: "version-main"
-  description: "枫丹地区开放，全新水下探索玩法上线。"
-  color: "#DBEAFE"
-  start_date: "2026-08-16"
-  end_date: "2026-09-27"
+- id: gi-4.0-version
+  game: genshin-impact
+  title: 「仿若无因飘落的轻雨」4.0 版本
+  type: version-main
+  description: 枫丹地区开放，全新水下探索玩法上线。
+  color: '#DBEAFE'
+  start_date: '2026-08-16'
+  end_date: '2026-09-27'
   phases:
-    - title: "上半：林尼 + 夜兰"
-      start_date: "2026-08-16"
-      end_date: "2026-09-06"
-    - title: "下半：钟离 + 公子"
-      start_date: "2026-09-06"
-      end_date: "2026-09-27"
-  tags: ["版本更新", "枫丹"]
-  source_url: "https://ys.mihoyo.com/"
-
-- id: "gi-4.0-banner-1"
-  game: "genshin-impact"
-  title: "「光与影的戏术」林尼 + 夜兰 UP"
-  type: "banner"
-  description: "限定五星角色「林尼（火弓）」+「夜兰（水弓）」概率UP"
-  color: "#FEF3C7"
-  start_date: "2026-08-16"
-  end_date: "2026-09-06"
-  tags: ["卡池", "林尼", "夜兰", "限定"]
-
-- id: "gi-4.0-banner-2"
-  game: "genshin-impact"
-  title: "「陵薮市朝」钟离 + 达达利亚 UP"
-  type: "banner"
-  description: "限定五星角色「钟离（岩枪）」+「达达利亚（水弓）」概率UP"
-  color: "#FFEDD5"
-  start_date: "2026-09-06"
-  end_date: "2026-09-27"
-  tags: ["卡池", "钟离", "达达利亚", "限定"]
-
-- id: "gi-4.0-meka"
-  game: "genshin-impact"
-  title: "「机枢巧物前哨战」主题活动"
-  type: "version-main"
-  description: "枫丹机关探险活动，完成挑战可获得专属四星武器及原石奖励。"
-  color: "#CCFBF1"
-  start_date: "2026-08-20"
-  end_date: "2026-09-10"
-  tags: ["版本活动", "机关", "四星武器"]
-
-- id: "gi-4.0-abyss"
-  game: "genshin-impact"
-  title: "深境螺旋 4.0 第一期"
-  type: "challenge"
-  description: "本期深境螺旋 buff：角色触发蒸发/融化反应时，攻击力提升。"
-  color: "#FEE2E2"
-  start_date: "2026-08-16"
-  end_date: "2026-09-01"
-  tags: ["深境螺旋", "高难"]
+  - title: 上半：林尼 + 夜兰
+    start_date: '2026-08-16'
+    end_date: '2026-09-06'
+  - title: 下半：钟离 + 公子
+    start_date: '2026-09-06'
+    end_date: '2026-09-27'
+  tags:
+  - 版本更新
+  - 枫丹
+  source_url: https://ys.mihoyo.com/
+- id: gi-4.0-banner-1
+  game: genshin-impact
+  title: 「光与影的戏术」林尼 + 夜兰 UP
+  type: banner
+  description: 限定五星角色「林尼（火弓）」+「夜兰（水弓）」概率UP
+  color: '#FEF3C7'
+  start_date: '2026-08-16'
+  end_date: '2026-09-06'
+  tags:
+  - 卡池
+  - 林尼
+  - 夜兰
+  - 限定
+- id: gi-4.0-banner-2
+  game: genshin-impact
+  title: 「陵薮市朝」钟离 + 达达利亚 UP
+  type: banner
+  description: 限定五星角色「钟离（岩枪）」+「达达利亚（水弓）」概率UP
+  color: '#FFEDD5'
+  start_date: '2026-09-06'
+  end_date: '2026-09-27'
+  tags:
+  - 卡池
+  - 钟离
+  - 达达利亚
+  - 限定
+- id: gi-4.0-meka
+  game: genshin-impact
+  title: 「机枢巧物前哨战」主题活动
+  type: version-main
+  description: 枫丹机关探险活动，完成挑战可获得专属四星武器及原石奖励。
+  color: '#CCFBF1'
+  start_date: '2026-08-20'
+  end_date: '2026-09-10'
+  tags:
+  - 版本活动
+  - 机关
+  - 四星武器
+- id: gi-4.0-abyss
+  game: genshin-impact
+  title: 深境螺旋 4.0 第一期
+  type: challenge
+  description: 本期深境螺旋 buff：角色触发蒸发/融化反应时，攻击力提升。
+  color: '#FEE2E2'
+  start_date: '2026-08-16'
+  end_date: '2026-09-01'
+  tags:
+  - 深境螺旋
+  - 高难
+- id: gi-悠悠律动舞力聚会活动-共舞挑战
+  game: genshin-impact
+  title: 「悠悠律动舞力聚会」活动：共舞挑战
+  type: challenge
+  start_date: '2026-07-24'
+  end_date: '2026-08-03'
+  color: '#a9ebfc'
+  description: 〓活动奖励〓 〓活动时间〓 2026/07/24 10:00 ~ 2026/08/03 03:59 〓参与条件〓 冒险等阶≥20级 且完成魔神任务：序章·第三幕「巨龙与自由之歌」 ※ 完成魔神任务 空月之歌·第十幕、传说任务「绘夏！烈日？度假村！」后体验更佳
