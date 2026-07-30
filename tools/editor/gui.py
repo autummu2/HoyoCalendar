@@ -69,22 +69,23 @@ class EventEditor:
     # ─── 类型库 ──────────────────────────────────────────
 
     def _collect_all_types(self):
-        seen = set()
-        # 内置默认类型作为基底
-        for key, label in EVENT_TYPES:
-            seen.add(label)
-        # 从所有活动中收集
-        for game_id in GAME_FILES:
-            events = load_events(game_id)
-            for ev in events:
-                t = ev.get("type", "")
-                if t:
-                    seen.add(t)
-        # 加载持久化的自定义类型
+        # 加载持久化的类型池（权威来源）
         saved = self._load_type_state()
-        for t in saved:
-            seen.add(t)
-        self.type_pool = sorted(seen)
+        if saved:
+            self.type_pool = sorted(saved)
+        else:
+            # 首次启动：内置默认 + 事件扫描
+            seen = set()
+            for key, label in EVENT_TYPES:
+                seen.add(label)
+            for game_id in GAME_FILES:
+                events = load_events(game_id)
+                for ev in events:
+                    t = ev.get("type", "")
+                    if t:
+                        seen.add(t)
+            self.type_pool = sorted(seen)
+            self._save_type_state()
 
     def _load_type_state(self) -> list[str]:
         try:
