@@ -15,6 +15,7 @@ dist-ssr
 # Python
 __pycache__/
 *.pyc
+tools/editor/type_pool.json
 
 # Editor directories and files
 .vscode/*
