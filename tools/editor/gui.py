@@ -119,11 +119,13 @@ class EventEditor:
     def _pick_date(self, entry: ttk.Entry):
         """弹出日历窗口，选中日期后填入 entry"""
         current = entry.get().strip()
+        today = datetime.date.today()
+        y, m, d = today.year, today.month, today.day
+        # 如果输入了有效日期且年份合理，使用输入的日期
         if re.match(r"^\d{4}-\d{2}-\d{2}$", current):
-            y, m, d = int(current[:4]), int(current[5:7]), int(current[8:10])
-        else:
-            today = datetime.date.today()
-            y, m, d = today.year, today.month, today.day
+            py, pm, pd = int(current[:4]), int(current[5:7]), int(current[8:10])
+            if 2020 <= py <= 2100:  # 年份合理性检查
+                y, m, d = py, pm, pd
 
         dlg = tk.Toplevel(self.root)
         dlg.title("选择日期")
