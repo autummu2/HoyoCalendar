@@ -156,14 +156,17 @@ def extract(text: str, game_id: str = "genshin-impact") -> dict:
     result: dict = {}
     game_kw = GAME_KEYWORDS.get(game_id, {})
 
-    # ── 1. 标题: 「...」 书名号 ──
-    titles = re.findall(r"[「『]([^」』]{4,60})[」』]", text)
+    # ── 1. 标题: 「...」 书名号（取第一个出现的位置） ──
+    titles = [(m.start(), m[1]) for m in re.finditer(r"[「『]([^」』]{4,60})[」』]", text)]
     if titles:
-        # 取最长的（通常是主标题）
-        titles.sort(key=len, reverse=True)
-        result["title"] = titles[0]
+        # 优先取前 3 个中出现版本号或活动关键词的
+        picked = None
+        for _, t in titles[:3]:
+            if any(kw in t for kw in ["版本", "活动", "开启", "上线", "更新"]):
+                picked = t
+                break
+        result["title"] = picked or titles[0][1]
     else:
-        # 退而求其次: 取第一句包含"版本"或"活动"的句子
         for sent in re.split(r"[。！\n]", text):
             if any(kw in sent for kw in ["版本", "活动", "开启", "上线"]):
                 result["title"] = sent.strip()[:60]

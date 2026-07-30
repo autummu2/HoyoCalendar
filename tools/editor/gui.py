@@ -750,6 +750,7 @@ class EventEditor:
         def do_parse():
             nonlocal parsed_data
             text = ""
+            result = None
             tab = nb.index(nb.select())
 
             if tab == 0:
@@ -775,7 +776,11 @@ class EventEditor:
                 return
 
             game = self.current_game or "genshin-impact"
-            parsed_data = extract(html_to_text(text) if "<" in text else text, game)
+            raw_text = html_to_text(text) if "<" in text else text
+            parsed_data = extract(raw_text, game)
+            # API 获取时优先用 API 返回的标题
+            if result and result.get("subject"):
+                parsed_data["title"] = result["subject"]
 
             # 更新预览
             type_map = dict(EVENT_TYPES)
