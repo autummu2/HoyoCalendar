@@ -7,12 +7,16 @@
 
 import calendar
 import datetime
+import json
+import os
 import re
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 
-from yaml_io import load_events, save_events, list_games, EVENT_TYPES, GAME_FILES, DATA_DIR
+from yaml_io import load_events, save_events, list_games, EVENT_TYPES, GAME_FILES, DATA_DIR, PROJECT_ROOT
 from extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
+
+TYPE_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "type_pool.json")
 
 FONT = ("Microsoft YaHei UI", 10)
 FONT_BOLD = ("Microsoft YaHei UI", 10, "bold")
@@ -76,7 +80,30 @@ class EventEditor:
                 t = ev.get("type", "")
                 if t:
                     seen.add(t)
+        # 加载持久化的自定义类型
+        saved = self._load_type_state()
+        for t in saved:
+            seen.add(t)
         self.type_pool = sorted(seen)
+
+    def _load_type_state(self) -> list[str]:
+        try:
+            if os.path.exists(TYPE_STATE_FILE):
+                with open(TYPE_STATE_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+        return []
+
+    def _save_type_state(self):
+        try:
+            os.makedirs(os.path.dirname(TYPE_STATE_FILE), exist_ok=True)
+            with open(TYPE_STATE_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.type_pool, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"保存类型状态失败: {e}")
 
     def _rebuild_type_pool(self):
         self._collect_all_types()
@@ -585,8 +612,7 @@ class EventEditor:
                 self.type_pool.append(name)
                 self.type_pool.sort()
                 self._refresh_type_combo()
-                lb.insert(tk.END, name)
-                # re-sort listbox
+                self._save_type_state()
                 lb.delete(0, tk.END)
                 for t in self.type_pool:
                     lb.insert(tk.END, t)
@@ -613,7 +639,12 @@ class EventEditor:
                     return
             self.type_pool.remove(name)
             self._refresh_type_combo()
-            lb.delete(sel[0])
+            self._save_type_state()
+            if self.selected_index is not None and self.combo_type.get() == name:
+                self.combo_type.set(self.type_pool[0] if self.type_pool else "")
+            lb.delete(0, tk.END)
+            for t in self.type_pool:
+                lb.insert(tk.END, t)
             self.status.config(text=f"已删除类型: {name}")
 
         ttk.Button(dlg, text="🗑 删除选中类型", command=do_delete).pack(pady=8)
