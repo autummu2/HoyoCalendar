@@ -719,6 +719,7 @@ class EventEditor:
             ttk.Label(list_frame, text=f"共 {len(getattr(self, '_parser_posts', []))} 篇", font=FONT_SMALL).pack()
 
         ttk.Button(tab2, text="🔄 刷新列表", command=refresh_post_list).pack(pady=4)
+        nb.bind("<<NotebookTabChanged>>", lambda e: refresh_post_list() if nb.index(nb.select()) == 1 else None)
 
         # ── Tab 3: 输入 post_id ──
         tab3 = ttk.Frame(nb)
@@ -778,7 +779,8 @@ class EventEditor:
                         return
 
             if not text.strip():
-                messagebox.showwarning("提示", "未获取到公告文本", parent=dlg)
+                reason = result.get("error", "正文为空") if result else "未知错误"
+                messagebox.showwarning("提示", f"未获取到公告文本: {reason}", parent=dlg)
                 return
 
             game = self.current_game or "genshin-impact"
@@ -799,14 +801,21 @@ class EventEditor:
             tags_label.config(text="标签: " + ", ".join(parsed_data.get("tags", [])))
 
         def do_fill():
-            if not parsed_data:
+            if not parsed_data or not self.current_game:
                 return
+            # 先创建空白活动条目（内部会设 selected_index 并加载空白表单）
+            self.events.append({
+                "id": "", "game": self.current_game, "title": "",
+                "type": "version-main", "start_date": "", "end_date": "",
+            })
+            self.selected_index = len(self.events) - 1
+            self._refresh_event_list()
+            # 用解析结果填充表单
             self.entry_title.delete(0, tk.END)
             self.entry_title.insert(0, parsed_data.get("title", ""))
+            type_map = {key: label for key, label in EVENT_TYPES}
             if parsed_data.get("type"):
-                type_map = {key: label for key, label in EVENT_TYPES}
-                label = type_map.get(parsed_data["type"], EVENT_TYPES[0][1])
-                self.combo_type.set(label)
+                self.combo_type.set(type_map.get(parsed_data["type"], EVENT_TYPES[0][1]))
             if parsed_data.get("start_date"):
                 self.entry_start.delete(0, tk.END)
                 self.entry_start.insert(0, parsed_data["start_date"])
@@ -819,28 +828,6 @@ class EventEditor:
             if parsed_data.get("tags"):
                 self.selected_tag_names = [t for t in parsed_data["tags"] if t in self.tag_pool]
                 self._set_tag_selection(self.selected_tag_names)
-            # 自动创建新活动条目，让保存逻辑正常工作
-            if not self.current_game:
-                dlg.destroy()
-                messagebox.showwarning("提示", "请先在左侧选择游戏")
-                return
-            self._new_event()  # 创建空白活动并选中
-            # 用解析结果覆盖刚创建的空白活动
-            self.entry_title.delete(0, tk.END)
-            self.entry_title.insert(0, parsed_data.get("title", ""))
-            if parsed_data.get("type"):
-                type_map = {key: label for key, label in EVENT_TYPES}
-                label = type_map.get(parsed_data["type"], EVENT_TYPES[0][1])
-                self.combo_type.set(label)
-            if parsed_data.get("start_date"):
-                self.entry_start.delete(0, tk.END)
-                self.entry_start.insert(0, parsed_data["start_date"])
-            if parsed_data.get("end_date"):
-                self.entry_end.delete(0, tk.END)
-                self.entry_end.insert(0, parsed_data["end_date"])
-            if parsed_data.get("description"):
-                self.text_desc.delete("1.0", tk.END)
-                self.text_desc.insert("1.0", parsed_data["description"])
             dlg.destroy()
             self.status.config(text="解析结果已填入表单，请核实后保存")
 
