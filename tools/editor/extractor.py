@@ -102,8 +102,17 @@ def fetch_post(post_id: int | str, game_id: str = "genshin-impact") -> dict | No
         r = requests.get(url, params=params, headers=headers, timeout=10)
         data = r.json()
         if data.get("retcode") != 0:
-            return None
-        post = data["data"]["post"]["post"]
+            return {"error": f"API 返回错误: {data.get('message', '未知')}"}
+        # 数据结构: data → post → post
+        outer = data.get("data", {})
+        if not isinstance(outer, dict):
+            return {"error": "data 字段不是对象"}
+        middle = outer.get("post", {})
+        if not isinstance(middle, dict):
+            return {"error": "data.post 字段不是对象"}
+        post = middle.get("post", middle) if "post" in middle else middle
+        if not isinstance(post, dict):
+            return {"error": "未找到 post 数据"}
         content = post.get("content", "") or ""
         return {
             "subject": post.get("subject", ""),
@@ -112,6 +121,8 @@ def fetch_post(post_id: int | str, game_id: str = "genshin-impact") -> dict | No
             "post_id": str(post.get("post_id", post_id)),
             "created_at": post.get("created_at", 0),
         }
+    except requests.RequestException as e:
+        return {"error": f"网络错误: {e}"}
     except Exception as e:
         return {"error": str(e)}
 

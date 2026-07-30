@@ -761,14 +761,20 @@ class EventEditor:
                 if sel and posts and self.current_game:
                     pid = posts[sel[0]]["post_id"]
                     result = fetch_post(pid, self.current_game)
+                    if result and result.get("error"):
+                        messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
+                        return
                     text = result.get("text", "") if result else ""
             elif tab == 1:
                 pid = pid_entry.get().strip()
                 if pid and self.current_game:
                     result = fetch_post(pid, self.current_game)
+                    if result and result.get("error"):
+                        messagebox.showwarning("提示", f"获取失败: {result['error']}", parent=dlg)
+                        return
                     text = result.get("text", "") if result else ""
                     if not text:
-                        messagebox.showwarning("提示", f"获取 post_id={pid} 失败，请检查 ID 是否正确", parent=dlg)
+                        messagebox.showwarning("提示", f"获取 post_id={pid} 失败，正文为空", parent=dlg)
                         return
 
             if not text.strip():
@@ -813,6 +819,28 @@ class EventEditor:
             if parsed_data.get("tags"):
                 self.selected_tag_names = [t for t in parsed_data["tags"] if t in self.tag_pool]
                 self._set_tag_selection(self.selected_tag_names)
+            # 自动创建新活动条目，让保存逻辑正常工作
+            if not self.current_game:
+                dlg.destroy()
+                messagebox.showwarning("提示", "请先在左侧选择游戏")
+                return
+            self._new_event()  # 创建空白活动并选中
+            # 用解析结果覆盖刚创建的空白活动
+            self.entry_title.delete(0, tk.END)
+            self.entry_title.insert(0, parsed_data.get("title", ""))
+            if parsed_data.get("type"):
+                type_map = {key: label for key, label in EVENT_TYPES}
+                label = type_map.get(parsed_data["type"], EVENT_TYPES[0][1])
+                self.combo_type.set(label)
+            if parsed_data.get("start_date"):
+                self.entry_start.delete(0, tk.END)
+                self.entry_start.insert(0, parsed_data["start_date"])
+            if parsed_data.get("end_date"):
+                self.entry_end.delete(0, tk.END)
+                self.entry_end.insert(0, parsed_data["end_date"])
+            if parsed_data.get("description"):
+                self.text_desc.delete("1.0", tk.END)
+                self.text_desc.insert("1.0", parsed_data["description"])
             dlg.destroy()
             self.status.config(text="解析结果已填入表单，请核实后保存")
 
