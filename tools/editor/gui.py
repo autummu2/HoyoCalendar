@@ -11,6 +11,7 @@ import json
 import os
 import re
 import subprocess
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 
@@ -721,60 +722,58 @@ class EventEditor:
         self.status.config(text="推送中...")
         self.root.update()
 
-        # 5. pull → add → commit → push develop → sync main
-        try:
-            # 先拉取远程最新避免冲突
-            subprocess.run(
-                ["git", "pull", "origin", "develop"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            # 提交数据文件
-            subprocess.run(
-                ["git", "add", "data/events/"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            subprocess.run(
-                ["git", "commit", "-m", "data: 更新活动数据"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            # 推送 develop
-            subprocess.run(
-                ["git", "push", "origin", "develop"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            # 同步到 main
-            subprocess.run(
-                ["git", "checkout", "main"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            subprocess.run(
-                ["git", "pull", "origin", "main"],
-                capture_output=True, text=True, cwd=PROJECT_ROOT,
-            )
-            subprocess.run(
-                ["git", "merge", "develop"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            subprocess.run(
-                ["git", "push", "origin", "main"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            # 切回 develop
-            subprocess.run(
-                ["git", "checkout", "develop"],
-                capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
-            )
-            self.status.config(text="已推送 → Vercel 自动部署中")
-            messagebox.showinfo("成功", "数据已推送，Vercel 将自动部署更新")
-        except subprocess.CalledProcessError as e:
-            err = e.stderr or e.stdout or str(e)
-            self.status.config(text="推送失败")
-            subprocess.run(["git", "checkout", "develop"], capture_output=True, cwd=PROJECT_ROOT)
-            if "merge" in str(e).lower() or "conflict" in str(e).lower():
-                messagebox.showerror("推送失败",
-                    f"合并冲突，请手动处理:\n{err[:300]}")
-            else:
-                messagebox.showerror("推送失败", f"Git 操作失败:\n{err[:300]}")
+        def do_push():
+            try:
+                subprocess.run(
+                    ["git", "pull", "origin", "develop"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "add", "data/events/"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "commit", "-m", "data: 更新活动数据"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "push", "origin", "develop"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "checkout", "main"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "pull", "origin", "main"],
+                    capture_output=True, text=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "merge", "develop"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "push", "origin", "main"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                subprocess.run(
+                    ["git", "checkout", "develop"],
+                    capture_output=True, text=True, check=True, cwd=PROJECT_ROOT,
+                )
+                self.root.after(0, lambda: self.status.config(text="已推送 → Vercel 自动部署中"))
+                self.root.after(0, lambda: messagebox.showinfo("成功", "数据已推送，Vercel 将自动部署更新"))
+            except subprocess.CalledProcessError as e:
+                err = e.stderr or e.stdout or str(e)
+                subprocess.run(["git", "checkout", "develop"], capture_output=True, cwd=PROJECT_ROOT)
+                def show_err():
+                    self.status.config(text="推送失败")
+                    if "merge" in str(e).lower() or "conflict" in str(e).lower():
+                        messagebox.showerror("推送失败", f"合并冲突，请手动处理:\n{err[:300]}")
+                    else:
+                        messagebox.showerror("推送失败", f"Git 操作失败:\n{err[:300]}")
+                self.root.after(0, show_err)
+
+        threading.Thread(target=do_push, daemon=True).start()
 
     # ─── 游戏列表 ──────────────────────────────────────────
 
