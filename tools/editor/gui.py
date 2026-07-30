@@ -677,21 +677,20 @@ class EventEditor:
     def _open_parser(self):
         dlg = tk.Toplevel(self.root)
         dlg.title("📥 解析公告")
-        dlg.geometry("600x550")
         dlg.transient(self.root)
         rx, ry = self.root.winfo_x(), self.root.winfo_y()
         rw, rh = self.root.winfo_width(), self.root.winfo_height()
-        dlg.geometry(f"600x550+{rx+(rw-600)//2}+{ry+(rh-550)//2}")
+        dlg.geometry(f"620x680+{rx+(rw-620)//2}+{ry+(rh-680)//2}")
         dlg.grab_set()
 
-        nb = ttk.Notebook(dlg)
-        nb.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        nb = ttk.Notebook(dlg, height=300)
+        nb.pack(fill=tk.X, padx=8, pady=8)
 
         # ── Tab 1: 粘贴文本 ──
         tab1 = ttk.Frame(nb)
         nb.add(tab1, text="粘贴文本")
         ttk.Label(tab1, text="粘贴公告原文，支持 HTML 或纯文本:", font=FONT_SMALL).pack(padx=8, pady=(8, 2))
-        text_area = tk.Text(tab1, height=16, font=FONT, wrap=tk.WORD)
+        text_area = tk.Text(tab1, height=12, font=FONT, wrap=tk.WORD)
         text_area.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
 
         # ── Tab 2: 公告列表 ──
