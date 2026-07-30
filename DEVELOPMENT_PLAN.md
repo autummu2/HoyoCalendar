@@ -403,7 +403,7 @@ Git管理数据版本    数据录入后台          CMS系统
 | 今日高亮样式优化 | 蓝色实心圆 + 白色数字 | ✅ 已完成 |
 | 活动完成状态 + 筛选 | localStorage + 卡片切换 + 筛选栏 | ✅ 已完成 |
 | GitHub Actions CI/CD | push/PR 触发 → lint → test → build | ✅ 已完成 |
-| 部署到 Vercel | 线上可访问 | ⬜ 待实现 |
+| 部署到 Vercel | https://hoyocalendar-nu.vercel.app | ✅ 已完成 |
 
 #### 🔧 Sprint 3 — 数据工具 (独立模块)
 
@@ -765,7 +765,7 @@ git branch -d feature/calendar-grid
 - [ ] 创建 Project Board（Kanban）
 - [ ] 配置 Issue Labels（按 10.3 节）
 - [ ] 创建 Issue Templates（功能请求 + Bug报告）
-- [ ] 配置 Vercel 关联 GitHub 仓库（自动部署）
+- [x] 配置 Vercel 关联 GitHub 仓库（自动部署）
 - [x] 添加 `.gitignore`（node_modules, dist, .env 等）
 - [ ] 添加 LICENSE（建议 MIT）
 - [x] 编写 README.md（项目简介 + 本地运行说明）
@@ -781,7 +781,7 @@ git branch -d feature/calendar-grid
 | 开发规范 (13.x) | ✅ 已确认 |
 | Sprint 0 — 项目初始化 | ✅ 完成 (2026-07-29) |
 | Sprint 1 — 日历核心组件 | ✅ 完成 (2026-07-29, 13/13) |
-| Sprint 2 — 额外视图 & 上线部署 | 🚀 进行中 (6/7 已完成) |
+| Sprint 2 — 额外视图 & 上线部署 | ✅ 完成 (7/7) |
 | Sprint 3 — 数据工具 | 📋 已规划 |
 | 当前分支 | `develop` |
 | 下一步 | 周/日视图 / 创建仓库 / CI / 部署 Vercel |

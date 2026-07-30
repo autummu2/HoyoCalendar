@@ -2,6 +2,8 @@
 
 一站式查看米哈游游戏活动日程的 Web 日历工具。
 
+🌐 **线上地址**: [hoyocalendar-nu.vercel.app](https://hoyocalendar-nu.vercel.app)
+
 ## 支持游戏
 
 - 原神 (Genshin Impact)
