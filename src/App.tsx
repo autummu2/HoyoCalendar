@@ -38,6 +38,15 @@ export default function App() {
   // ===== 活动数据 =====
   const { events, loading, error } = useEvents()
 
+  // 从数据中动态收集类型列表（用于筛选器）
+  const availableTypes = useMemo(() => {
+    const seen = new Set<string>()
+    for (const e of events) {
+      if (e.type) seen.add(e.type)
+    }
+    return [...seen].sort()
+  }, [events])
+
   // ===== 筛选后的活动 =====
   const filteredEvents = useMemo(() => {
     // 选中 0 个或 2 个 = 全部；选中 1 个 = 仅该状态
@@ -190,7 +199,7 @@ export default function App() {
         style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-surface)' }}
       >
         <GameFilter selected={gameFilter} onChange={setGameFilter} />
-        <TypeFilter selected={typeFilter} onChange={setTypeFilter} />
+        <TypeFilter availableTypes={availableTypes} selected={typeFilter} onChange={setTypeFilter} />
         <CompletionFilter selected={completionFilter} onChange={setCompletionFilter} />
       </div>
 
