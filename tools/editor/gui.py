@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 
 from yaml_io import load_events, save_events, list_games, EVENT_TYPES, GAME_FILES, DATA_DIR
+from extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
 
 FONT = ("Microsoft YaHei UI", 10)
 FONT_BOLD = ("Microsoft YaHei UI", 10, "bold")
@@ -198,6 +199,7 @@ class EventEditor:
         btn_frame.pack(fill=tk.X, pady=(4, 0))
         ttk.Button(btn_frame, text="+ 新建活动", command=self._new_event).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="🗑 删除选中", command=self._delete_event).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="📥 解析公告", command=self._open_parser).pack(side=tk.RIGHT, padx=2)
 
         # ── 右栏：编辑表单 ──
         right = ttk.LabelFrame(body, text="编辑活动", padding=8)
@@ -669,6 +671,152 @@ class EventEditor:
     def _revert_form(self):
         if self.selected_index is not None and self.selected_index < len(self.events):
             self._load_form(self.events[self.selected_index])
+
+    # ─── 公告解析 ────────────────────────────────────────
+
+    def _open_parser(self):
+        dlg = tk.Toplevel(self.root)
+        dlg.title("📥 解析公告")
+        dlg.geometry("600x550")
+        dlg.transient(self.root)
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        dlg.geometry(f"600x550+{rx+(rw-600)//2}+{ry+(rh-550)//2}")
+        dlg.grab_set()
+
+        nb = ttk.Notebook(dlg)
+        nb.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+
+        # ── Tab 1: 粘贴文本 ──
+        tab1 = ttk.Frame(nb)
+        nb.add(tab1, text="粘贴文本")
+        ttk.Label(tab1, text="粘贴公告原文，支持 HTML 或纯文本:", font=FONT_SMALL).pack(padx=8, pady=(8, 2))
+        text_area = tk.Text(tab1, height=16, font=FONT, wrap=tk.WORD)
+        text_area.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
+
+        # ── Tab 2: 公告列表 ──
+        tab2 = ttk.Frame(nb)
+        nb.add(tab2, text="公告列表")
+        ttk.Label(tab2, text="从米游社获取最新公告 (当前游戏):", font=FONT_SMALL).pack(padx=8, pady=(8, 2))
+
+        list_frame = ttk.Frame(tab2)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=8)
+        scroll2 = ttk.Scrollbar(list_frame)
+        scroll2.pack(side=tk.RIGHT, fill=tk.Y)
+        post_listbox = tk.Listbox(list_frame, font=FONT_SMALL, yscrollcommand=scroll2.set)
+        post_listbox.pack(fill=tk.BOTH, expand=True)
+        scroll2.config(command=post_listbox.yview)
+
+        def refresh_post_list():
+            post_listbox.delete(0, tk.END)
+            if self.current_game:
+                posts = fetch_post_list(self.current_game, 15)
+                for p in posts:
+                    ts = p.get("created_at", 0)
+                    dt = datetime.datetime.fromtimestamp(ts).strftime("%m/%d") if ts else "??"
+                    post_listbox.insert(tk.END, f"[{dt}] {p['subject'][:60]}")
+                    post_listbox.itemconfig(tk.END, fg="gray" if "已结束" in p["subject"] else "black")
+                self._parser_posts = posts
+            ttk.Label(list_frame, text=f"共 {len(getattr(self, '_parser_posts', []))} 篇", font=FONT_SMALL).pack()
+
+        ttk.Button(tab2, text="🔄 刷新列表", command=refresh_post_list).pack(pady=4)
+
+        # ── Tab 3: 输入 post_id ──
+        tab3 = ttk.Frame(nb)
+        nb.add(tab3, text="Post ID")
+        ttk.Label(tab3, text="输入公告的 post_id:", font=FONT_SMALL).pack(padx=8, pady=(8, 2))
+        ttk.Label(tab3, text="(从 miyoushe.com 公告 URL 的最后一段数字)", foreground="gray", font=FONT_SMALL).pack()
+        pid_entry = ttk.Entry(tab3, font=FONT, width=25)
+        pid_entry.pack(padx=8, pady=4)
+
+        # ── 结果预览区 ──
+        result_frame = ttk.LabelFrame(dlg, text="提取结果", padding=4)
+        result_frame.pack(fill=tk.X, padx=8, pady=(0, 4))
+
+        result_labels: dict[str, ttk.Label] = {}
+        for field, label in [("title", "标题"), ("type", "类型"), ("start_date", "开始"),
+                             ("end_date", "结束"), ("description", "描述")]:
+            row = ttk.Frame(result_frame)
+            row.pack(fill=tk.X, pady=1)
+            ttk.Label(row, text=f"{label}:", font=FONT_SMALL, width=5).pack(side=tk.LEFT)
+            lbl = ttk.Label(row, text="", font=FONT_SMALL, foreground="gray")
+            lbl.pack(side=tk.LEFT, padx=4)
+            result_labels[field] = lbl
+
+        tags_label = ttk.Label(result_frame, text="", font=FONT_SMALL, foreground="#3730A3")
+        tags_label.pack(anchor=tk.W, padx=44)
+
+        parsed_data: dict = {}
+
+        def do_parse():
+            nonlocal parsed_data
+            text = ""
+            tab = nb.index(nb.select())
+
+            if tab == 0:
+                text = text_area.get("1.0", tk.END)
+            elif tab == 2:
+                sel = post_listbox.curselection()
+                posts = getattr(self, "_parser_posts", [])
+                if sel and posts and self.current_game:
+                    pid = posts[sel[0]]["post_id"]
+                    result = fetch_post(pid, self.current_game)
+                    text = result.get("text", "") if result else ""
+            elif tab == 1:
+                pid = pid_entry.get().strip()
+                if pid and self.current_game:
+                    result = fetch_post(pid, self.current_game)
+                    text = result.get("text", "") if result else ""
+                    if not text:
+                        messagebox.showwarning("提示", f"获取 post_id={pid} 失败，请检查 ID 是否正确", parent=dlg)
+                        return
+
+            if not text.strip():
+                messagebox.showwarning("提示", "未获取到公告文本", parent=dlg)
+                return
+
+            game = self.current_game or "genshin-impact"
+            parsed_data = extract(html_to_text(text) if "<" in text else text, game)
+
+            # 更新预览
+            type_map = dict(EVENT_TYPES)
+            result_labels["title"].config(text=parsed_data.get("title", "(未识别)")[:60])
+            result_labels["type"].config(text=type_map.get(parsed_data.get("type", ""), "(未识别)"))
+            result_labels["start_date"].config(text=parsed_data.get("start_date", "(未识别)"))
+            result_labels["end_date"].config(text=parsed_data.get("end_date", "(未识别)"))
+            desc = parsed_data.get("description", "")
+            result_labels["description"].config(text=desc[:80] + ("..." if len(desc) > 80 else ""))
+            tags_label.config(text="标签: " + ", ".join(parsed_data.get("tags", [])))
+
+        def do_fill():
+            if not parsed_data:
+                return
+            self.entry_title.delete(0, tk.END)
+            self.entry_title.insert(0, parsed_data.get("title", ""))
+            if parsed_data.get("type"):
+                type_map = {key: label for key, label in EVENT_TYPES}
+                label = type_map.get(parsed_data["type"], EVENT_TYPES[0][1])
+                self.combo_type.set(label)
+            if parsed_data.get("start_date"):
+                self.entry_start.delete(0, tk.END)
+                self.entry_start.insert(0, parsed_data["start_date"])
+            if parsed_data.get("end_date"):
+                self.entry_end.delete(0, tk.END)
+                self.entry_end.insert(0, parsed_data["end_date"])
+            if parsed_data.get("description"):
+                self.text_desc.delete("1.0", tk.END)
+                self.text_desc.insert("1.0", parsed_data["description"])
+            if parsed_data.get("tags"):
+                self.selected_tag_names = [t for t in parsed_data["tags"] if t in self.tag_pool]
+                self._set_tag_selection(self.selected_tag_names)
+            dlg.destroy()
+            self.status.config(text="解析结果已填入表单，请核实后保存")
+
+        btn_bar = ttk.Frame(dlg)
+        btn_bar.pack(pady=(0, 8))
+        ttk.Button(btn_bar, text="🔍 解析", command=do_parse).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_bar, text="📋 填入表单", command=do_fill).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_bar, text="关闭", command=dlg.destroy).pack(side=tk.LEFT, padx=4)
 
     # ─── 保存 ──────────────────────────────────────────────
 
