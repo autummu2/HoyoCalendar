@@ -34,6 +34,10 @@ class EventEditor:
         # 标签库（跨游戏共享，启动时从所有 YAML 中收集）
         self.tag_pool: list[str] = []
         self.selected_tag_names: list[str] = []
+        self.event_filter_map: list[int] = []  # display_index → real_index
+        self.event_sort = tk.StringVar(value="date")
+        self.event_filter_range = tk.StringVar(value="all")
+        self.event_search_var = tk.StringVar()
         self._collect_all_tags()
 
         self._build_ui()
@@ -168,6 +172,27 @@ class EventEditor:
         self.event_tree.column("id", width=120)
         self.event_tree.pack(fill=tk.BOTH, expand=True)
         self.event_tree.bind("<<TreeviewSelect>>", self._on_event_select)
+
+        # 筛选排序栏
+        filter_bar = ttk.Frame(center)
+        filter_bar.pack(fill=tk.X, pady=(4, 0))
+
+        ttk.Label(filter_bar, text="排序:", font=FONT_SMALL).pack(side=tk.LEFT)
+        sort_combo = ttk.Combobox(filter_bar, textvariable=self.event_sort, values=["按开始日期", "按标题", "按类型"],
+                                  state="readonly", width=10, font=FONT_SMALL)
+        sort_combo.pack(side=tk.LEFT, padx=(2, 8))
+        sort_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
+
+        ttk.Label(filter_bar, text="范围:", font=FONT_SMALL).pack(side=tk.LEFT)
+        range_combo = ttk.Combobox(filter_bar, textvariable=self.event_filter_range, values=["全部", "本月", "近30天"],
+                                   state="readonly", width=6, font=FONT_SMALL)
+        range_combo.pack(side=tk.LEFT, padx=(2, 8))
+        range_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
+
+        ttk.Label(filter_bar, text="搜索:", font=FONT_SMALL).pack(side=tk.LEFT)
+        search_entry = ttk.Entry(filter_bar, textvariable=self.event_search_var, width=14, font=FONT_SMALL)
+        search_entry.pack(side=tk.LEFT, padx=2)
+        self.event_search_var.trace_add("write", lambda *a: self._refresh_event_list())
 
         btn_frame = ttk.Frame(center)
         btn_frame.pack(fill=tk.X, pady=(4, 0))
@@ -510,10 +535,47 @@ class EventEditor:
 
     def _refresh_event_list(self):
         type_map = dict(EVENT_TYPES)
-        self.event_tree.delete(*self.event_tree.get_children())
+        today = datetime.date.today()
+        search = self.event_search_var.get().strip().lower()
+
+        # 筛选 + 排序
+        filtered: list[tuple[int, dict]] = []
         for i, ev in enumerate(self.events):
+            start = ev.get("start_date", "")
+            # 范围过滤
+            if self.event_filter_range.get() == "本月":
+                if not start or start[:7] != today.strftime("%Y-%m"):
+                    continue
+            elif self.event_filter_range.get() == "近30天":
+                if start:
+                    try:
+                        d = datetime.date.fromisoformat(start)
+                        if d < today or d > today + datetime.timedelta(days=30):
+                            continue
+                    except ValueError:
+                        pass
+            # 搜索过滤
+            if search and search not in ev.get("title", "").lower() and search not in ev.get("id", "").lower():
+                continue
+            filtered.append((i, ev))
+
+        # 排序
+        sort_key = self.event_sort.get()
+        if sort_key == "按开始日期":
+            filtered.sort(key=lambda x: x[1].get("start_date", ""))
+        elif sort_key == "按标题":
+            filtered.sort(key=lambda x: x[1].get("title", ""))
+        elif sort_key == "按类型":
+            filtered.sort(key=lambda x: type_map.get(x[1].get("type", ""), ""))
+        else:
+            filtered.sort(key=lambda x: x[1].get("start_date", ""))
+
+        self.event_filter_map = [f[0] for f in filtered]
+
+        self.event_tree.delete(*self.event_tree.get_children())
+        for di, (ri, ev) in enumerate(filtered):
             self.event_tree.insert(
-                "", tk.END, iid=str(i),
+                "", tk.END, iid=str(di),
                 values=(
                     ev.get("title", ""),
                     type_map.get(ev.get("type", ""), ""),
@@ -526,8 +588,10 @@ class EventEditor:
         sel = self.event_tree.selection()
         if not sel:
             return
-        self.selected_index = int(sel[0])
-        self._load_form(self.events[self.selected_index])
+        di = int(sel[0])
+        if di < len(self.event_filter_map):
+            self.selected_index = self.event_filter_map[di]
+            self._load_form(self.events[self.selected_index])
 
     def _new_event(self):
         if not self.current_game:
@@ -539,8 +603,12 @@ class EventEditor:
         })
         self.selected_index = len(self.events) - 1
         self._refresh_event_list()
-        self.event_tree.selection_set(str(self.selected_index))
-        self.event_tree.see(str(self.selected_index))
+        try:
+            di = self.event_filter_map.index(self.selected_index)
+            self.event_tree.selection_set(str(di))
+            self.event_tree.see(str(di))
+        except ValueError:
+            pass
         self._load_form(self.events[self.selected_index])
         self.status.config(text=f"新建活动 — {self.current_game}")
 
@@ -652,7 +720,13 @@ class EventEditor:
         self._rebuild_tag_pool()
         self._refresh_event_list()
         self._refresh_game_list()
-        self.event_tree.selection_set(str(self.selected_index))
+        # 找到保存活动在显示列表中的位置
+        try:
+            di = self.event_filter_map.index(self.selected_index)
+            self.event_tree.selection_set(str(di))
+            self.event_tree.see(str(di))
+        except ValueError:
+            pass
         self.status.config(text=f"已保存 → data/events/{GAME_FILES[self.current_game]}")
 
     def _auto_id(self, title: str, start_date: str) -> str:
