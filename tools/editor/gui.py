@@ -120,21 +120,19 @@ class EventEditor:
         """弹出日历窗口，选中日期后填入 entry"""
         current = entry.get().strip()
         today = datetime.date.today()
-        y, m, d = today.year, today.month, today.day
-        # 如果输入了有效日期且年份合理，使用输入的日期
+        yr, mo, dy = today.year, today.month, today.day
         if re.match(r"^\d{4}-\d{2}-\d{2}$", current):
-            py, pm, pd = int(current[:4]), int(current[5:7]), int(current[8:10])
-            if 2020 <= py <= 2100:  # 年份合理性检查
-                y, m, d = py, pm, pd
+            py2, pm2, pd2 = int(current[:4]), int(current[5:7]), int(current[8:10])
+            if 2020 <= py2 <= 2100:
+                yr, mo, dy = py2, pm2, pd2
 
         dlg = tk.Toplevel(self.root)
         dlg.title("选择日期")
-        # 定位在编辑器窗口中央
         rx, ry = self.root.winfo_x(), self.root.winfo_y()
         rw, rh = self.root.winfo_width(), self.root.winfo_height()
-        x = rx + (rw - 260) // 2
-        y = ry + (rh - 240) // 2
-        dlg.geometry(f"260x240+{x}+{y}")
+        px = rx + (rw - 260) // 2
+        py = ry + (rh - 240) // 2
+        dlg.geometry(f"260x240+{px}+{py}")
         dlg.transient(self.root)
         dlg.grab_set()
         dlg.resizable(False, False)
@@ -154,11 +152,11 @@ class EventEditor:
 
         self._cal_grid = ttk.Frame(dlg)
         self._cal_grid.pack(pady=2)
-        self._cal_year = y
-        self._cal_month = m
+        self._cal_year = yr
+        self._cal_month = mo
         self._cal_entry = entry
         self._cal_dlg = dlg
-        self._cal_render(y, m)
+        self._cal_render(yr, mo)
 
     def _cal_nav(self, delta: int):
         self._cal_month += delta
