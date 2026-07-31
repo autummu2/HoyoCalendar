@@ -1,0 +1,32 @@
+- id: tea-邂逅幻梦莫弈-活动
+  game: tears-of-themis
+  title: 「邂逅幻梦」莫弈MR活动
+  type: 常规活动
+  start_date: '2026-07-28'
+  end_date: '2026-08-21'
+  color: '#d9e9c5'
+  description: 活动期间，律师每日通过选择心动方案提交素材，捕获心动，可获得甜蜜值。累计甜蜜值达到指定阶段等级，可获得莫弈MR思绪【晶盈】、活动限定名片【邂逅 · 晶盈】及【未名晶片】等丰厚奖励
+  source_url: https://www.miyoushe.com/wd/article/76913744
+  tags:
+  - MR
+  - 莫弈
+- id: tea-何人生还
+  game: tears-of-themis
+  title: 「何人生还」
+  type: 版本大活动
+  start_date: '2026-07-15'
+  end_date: '2026-08-01'
+  color: '#bc5454'
+  description: 完成主线故事，参与庄园巡查，累计收集调查线索达到指定进度，可领取【未名晶片】、【女神之泪·限时】、活动徽章【谜章叙影】、邀请函背景【古堡卧室】、活动限定名片【盛典·谜宴】、活动限定R思绪及思绪残影等丰厚奖励。
+  source_url: https://www.miyoushe.com/wd/article/76662839
+  tags:
+  - 联动
+- id: tea-慢度余生-天纪念签到
+  game: tears-of-themis
+  title: 「慢度余生」2199天纪念签到
+  type: 常规活动
+  start_date: '2026-08-02'
+  end_date: '2026-08-08'
+  color: '#fdeaea'
+  description: 活动期间，每日登录游戏，累计签到达指定天数即可解锁他的特别来信、甜心家装图纸「爱你久久气球」及思绪养成素材等多重奖励。
+  source_url: https://www.miyoushe.com/wd/article/77075180

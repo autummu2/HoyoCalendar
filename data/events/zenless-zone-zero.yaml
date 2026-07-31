@@ -1,1 +1,22 @@
-[]
+- id: zzz-版本漫长的告别更新
+  game: zenless-zone-zero
+  title: 3.1版本「漫长的告别」更新
+  type: 版本更新
+  start_date: '2026-07-29'
+  end_date: '2026-07-29'
+  color: '#ffffff'
+- id: zzz-法厄同年度大揭秘
+  game: zenless-zone-zero
+  title: 「法厄同年度大揭秘」
+  type: 网页活动
+  start_date: '2026-07-29'
+  end_date: '2026-09-09'
+  source_url: https://mhyurl.cn/8PFqQ2wRa
+- id: zzz-恰浪花逐夏而至
+  game: zenless-zone-zero
+  title: 「恰浪花逐夏而至」
+  type: 版本大活动
+  start_date: '2026-07-29'
+  end_date: '2026-09-07'
+  color: '#f7dbdb'
+  description: 完成活动期间的限时奖励任务，即可获得时装[露西·公主假日]、活动专属名片[夏焰未央]、[「仓鼠笼」访问器]、[菲林]和各类养成材料奖励。
