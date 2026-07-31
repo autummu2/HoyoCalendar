@@ -47,8 +47,8 @@
   game: genshin-impact
   title: 7.0版本停服更新
   type: 版本更新
-  start_date: '2026-08-13'
-  end_date: '2026-08-13'
+  start_date: '2026-08-12'
+  end_date: '2026-08-12'
   color: '#ffffff'
 - id: gi-影寂天下人祈愿-一心净土-雷电将军
   game: genshin-impact
@@ -89,3 +89,14 @@
   start_date: '2026-06-16'
   end_date: '2026-07-15'
   color: '#6f69d8'
+- id: gi-至冬将至-网页活动
+  game: genshin-impact
+  title: ⌈至冬将至⌋网页活动
+  type: 网页活动
+  start_date: '2026-07-31'
+  end_date: '2026-08-11'
+  color: '#ddefff'
+  source_url: https://act.mihoyo.com/ys/event/e20260731reserve-y2xckt/index.html?game_biz=hk4e_cn&mhy_presentation_style=fullscreen&mhy_auth_required=true&mhy_landscape=true&mhy_hide_status_bar=true&utm_source=bbs&utm_medium=mys&utm_campaign=arti
+  description: '1、活动期间，旅行者完成新版本预约，将获得40原石奖励，奖励将于8月12日版本更新之后通过游戏内邮件发放。
+
+    2、活动期间，旅行者还可分享专属链接邀请他人预约新版本。每成功邀请1人通过专属链接完成预约，邀请人可获得20原石，最多可邀请2人。'
