@@ -20,3 +20,11 @@
   end_date: '2026-09-07'
   color: '#f7dbdb'
   description: 完成活动期间的限时奖励任务，即可获得时装[露西·公主假日]、活动专属名片[夏焰未央]、[「仓鼠笼」访问器]、[菲林]和各类养成材料奖励。
+- id: zzz-迷宫诡域常驻玩法开启
+  game: zenless-zone-zero
+  title: 「迷宫诡域」常驻玩法开启
+  type: 常规活动
+  start_date: '2026-08-05'
+  end_date: '2026-08-05'
+  color: '#ecf1fd'
+  description: 「迷宫诡域」将于2026/08/05 10:00后开启，欢迎绳匠持续体验与关注！

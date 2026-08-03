@@ -30,3 +30,13 @@
   color: '#fdeaea'
   description: 活动期间，每日登录游戏，累计签到达指定天数即可解锁他的特别来信、甜心家装图纸「爱你久久气球」及思绪养成素材等多重奖励。
   source_url: https://www.miyoushe.com/wd/article/77075180
+- id: tea-爱有所期-左然篇
+  game: tears-of-themis
+  title: 爱有所期·左然篇
+  type: 常规活动
+  start_date: '2026-08-04'
+  end_date: '2026-08-11'
+  color: '#dd9191'
+  description: ✨「爱有所期·左然篇」限时活动开放
+  tags:
+  - 左然
