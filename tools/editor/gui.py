@@ -1126,10 +1126,22 @@ class EventEditor:
     # ─── 保存 ──────────────────────────────────────────────
 
     def _save_event(self):
-        if self.selected_index is None or not self.current_game:
+        if not self.current_game:
             return
 
         title = self.entry_title.get().strip()
+        if not title:
+            messagebox.showwarning("提示", "标题不能为空")
+            return
+
+        # 未选中活动时，自动创建新活动
+        if self.selected_index is None:
+            default_type = self._type_key(self.type_pool[0]) if self.type_pool else ""
+            self.events.append({
+                "id": "", "game": self.current_game, "title": "",
+                "type": default_type, "start_date": "", "end_date": "",
+            })
+            self.selected_index = len(self.events) - 1
         if not title:
             messagebox.showwarning("提示", "标题不能为空")
             return

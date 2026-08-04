@@ -43,3 +43,10 @@
   start_date: '2026-07-15'
   end_date: '2026-08-25'
   color: '#f79595'
+- id: hsr-刻律德菈-同谐-风
+  game: honkai-star-rail
+  title: 「刻律德菈（同谐•风）」「那刻夏（智识•风）」「砂金（存护•虚数）」返场
+  type: 卡池
+  start_date: '2026-08-05'
+  end_date: '2026-08-25'
+  color: '#c2a7eb'
