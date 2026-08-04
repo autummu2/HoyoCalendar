@@ -44,7 +44,8 @@ class EventEditor:
         # 类型库（同标签逻辑：从数据中动态收集，可增删，单选）
         self.type_pool: list[str] = []
         self.event_filter_map: list[int] = []  # display_index → real_index
-        self.event_sort = tk.StringVar(value="date")
+        self.event_sort = tk.StringVar(value="按开始日期")
+        self.event_order = tk.StringVar(value="正序")
         self.event_filter_range = tk.StringVar(value="all")
         self.event_search_var = tk.StringVar()
         self._collect_all_tags()
@@ -245,8 +246,13 @@ class EventEditor:
         ttk.Label(filter_bar, text="排序:", font=FONT_SMALL).pack(side=tk.LEFT)
         sort_combo = ttk.Combobox(filter_bar, textvariable=self.event_sort, values=["按开始日期", "按标题", "按类型"],
                                   state="readonly", width=10, font=FONT_SMALL)
-        sort_combo.pack(side=tk.LEFT, padx=(2, 8))
+        sort_combo.pack(side=tk.LEFT, padx=(2, 4))
         sort_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
+
+        order_combo = ttk.Combobox(filter_bar, textvariable=self.event_order, values=["正序", "倒序"],
+                                   state="readonly", width=4, font=FONT_SMALL)
+        order_combo.pack(side=tk.LEFT, padx=(0, 8))
+        order_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
 
         ttk.Label(filter_bar, text="范围:", font=FONT_SMALL).pack(side=tk.LEFT)
         range_combo = ttk.Combobox(filter_bar, textvariable=self.event_filter_range, values=["全部", "本月", "近30天"],
@@ -834,14 +840,15 @@ class EventEditor:
 
         # 排序
         sort_key = self.event_sort.get()
+        reverse = self.event_order.get() == "倒序"
         if sort_key == "按开始日期":
-            filtered.sort(key=lambda x: x[1].get("start_date", ""))
+            filtered.sort(key=lambda x: x[1].get("start_date", ""), reverse=reverse)
         elif sort_key == "按标题":
-            filtered.sort(key=lambda x: x[1].get("title", ""))
+            filtered.sort(key=lambda x: x[1].get("title", ""), reverse=reverse)
         elif sort_key == "按类型":
-            filtered.sort(key=lambda x: self._type_label(x[1].get("type", "")))
+            filtered.sort(key=lambda x: self._type_label(x[1].get("type", "")), reverse=reverse)
         else:
-            filtered.sort(key=lambda x: x[1].get("start_date", ""))
+            filtered.sort(key=lambda x: x[1].get("start_date", ""), reverse=reverse)
 
         self.event_filter_map = [f[0] for f in filtered]
 
@@ -1207,12 +1214,16 @@ class EventEditor:
         prefix = {
             "genshin-impact": "gi", "honkai-star-rail": "hsr", "zenless-zone-zero": "zzz",
         }.get(self.current_game, self.current_game[:3])
+        # 活动类型简写（取前两字）
+        type_key = self._type_key(self.combo_type.get())
+        type_short = type_key[:2] if len(type_key) >= 2 else type_key
+        # 标题去符号取中文+数字，限制8字
         clean = re.sub(r"[「」『』""'']", "", title)
-        words = re.findall(r"[一-鿿]+", clean)
-        slug = "-".join(words[:3]) if words else "event"
-        if len(slug) > 30:
-            slug = slug[:30]
-        return f"{prefix}-{slug}"
+        words = "".join(re.findall(r"[一-鿿\d]", clean))
+        title_part = words[:8] if words else "event"
+        # 日期取 YYYY-MM
+        date_part = start_date[:7] if start_date else ""
+        return f"{prefix}-{type_short}-{date_part}-{title_part}"
 
 
 def main():
