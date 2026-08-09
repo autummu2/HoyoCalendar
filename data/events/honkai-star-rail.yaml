@@ -50,3 +50,31 @@
   start_date: '2026-08-05'
   end_date: '2026-08-25'
   color: '#c2a7eb'
+- id: hsr-高难-2026-08-虚构叙事构事生意
+  game: honkai-star-rail
+  title: 虚构叙事·构事生意
+  type: 高难挑战
+  start_date: '2026-08-03'
+  end_date: '2026-09-13'
+  color: '#faea9e'
+- id: hsr-高难-2026-07-末日幻影兵锋骑士
+  game: honkai-star-rail
+  title: 末日幻影·兵锋骑士
+  type: 高难挑战
+  start_date: '2026-07-20'
+  end_date: '2026-08-31'
+  color: '#abbfed'
+- id: hsr-高难-2026-07-忘却之庭学院怪谈
+  game: honkai-star-rail
+  title: 忘却之庭·学院怪谈
+  type: 高难挑战
+  start_date: '2026-07-06'
+  end_date: '2026-08-16'
+  color: '#cff0a8'
+- id: hsr-高难-2026-07-异相仲裁尘世卷中
+  game: honkai-star-rail
+  title: 异相仲裁·尘世卷中
+  type: 高难挑战
+  start_date: '2026-07-15'
+  end_date: '2026-08-25'
+  color: '#f7d9a2'
