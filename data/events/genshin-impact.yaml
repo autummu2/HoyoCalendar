@@ -107,3 +107,10 @@
   start_date: '2026-08-01'
   end_date: '2026-08-31'
   color: '#7ba6f4'
+- id: gi-高难-2026-08-8月深境螺旋
+  game: genshin-impact
+  title: 8月深境螺旋
+  type: 高难挑战
+  start_date: '2026-08-16'
+  end_date: '2026-09-15'
+  color: '#8779d2'

@@ -399,6 +399,7 @@ class EventEditor:
         btn_row = ttk.Frame(right)
         btn_row.grid(row=row, column=0, columnspan=3, pady=(8, 0))
         ttk.Button(btn_row, text="💾 保存", command=self._save_event).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_row, text="📋 另存为", command=self._save_as_new).pack(side=tk.LEFT, padx=4)
         ttk.Button(btn_row, text="↩ 撤销修改", command=self._revert_form).pack(side=tk.LEFT, padx=4)
 
         # 状态栏
@@ -952,6 +953,62 @@ class EventEditor:
         self.selected_tag_names = []
         self.tag_listbox.selection_clear(0, tk.END)
         self._refresh_selected_tags_display()
+
+    def _save_as_new(self):
+        """将当前表单内容另存为新活动"""
+        if not self.current_game:
+            return
+        title = self.entry_title.get().strip()
+        if not title:
+            messagebox.showwarning("提示", "标题不能为空")
+            return
+        # 复用校验逻辑
+        start = self.entry_start.get().strip()
+        end = self.entry_end.get().strip()
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", start):
+            messagebox.showwarning("提示", "开始日期格式不正确 (YYYY-MM-DD)")
+            return
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", end):
+            messagebox.showwarning("提示", "结束日期格式不正确 (YYYY-MM-DD)")
+            return
+
+        # 构建新活动数据
+        color = self.entry_color.get().strip()
+        ev_type = self._type_key(self.combo_type.get())
+        desc = self.text_desc.get("1.0", tk.END).strip()
+        link = self.entry_link.get().strip()
+        tags = self._get_selected_tags()
+
+        new_ev = {
+            "id": self._auto_id(title, start),
+            "game": self.current_game,
+            "title": title,
+            "type": ev_type,
+            "start_date": start,
+            "end_date": end,
+        }
+        if color and re.match(r"^#[0-9a-fA-F]{6}$", color):
+            new_ev["color"] = color
+        if desc:
+            new_ev["description"] = desc
+        if link:
+            new_ev["source_url"] = link
+        if tags:
+            new_ev["tags"] = tags
+
+        self.events.append(new_ev)
+        self.selected_index = len(self.events) - 1
+        save_events(self.current_game, self.events)
+        self._rebuild_tag_pool()
+        self._refresh_event_list()
+        self._refresh_game_list()
+        try:
+            di = self.event_filter_map.index(self.selected_index)
+            self.event_tree.selection_set(str(di))
+            self.event_tree.see(str(di))
+        except ValueError:
+            pass
+        self.status.config(text=f"已另存为新活动 → {GAME_FILES[self.current_game]}")
 
     def _revert_form(self):
         if self.selected_index is not None and self.selected_index < len(self.events):
