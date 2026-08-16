@@ -396,31 +396,20 @@ Git管理数据版本    数据录入后台          CMS系统
 
 ### 9.1 分支模型
 
-采用 **Trunk-based Development + Feature Branch** 策略：
-
 ```
-main (生产分支)
-├── develop (开发主分支)
-│   ├── feature/calendar-grid      ← Sprint 1: 日历组件
-│   ├── feature/event-detail       ← Sprint 2: 活动详情
-│   ├── feature/month-navigation   ← 月份导航
-│   ├── feature/data-loader        ← 数据加载层
-│   ├── feature/theme-system       ← 主题系统
-│   ├── feature/game-filter        ← 游戏筛选
-│   └── feature/auto-crawler       ← 远期: 自动抓取
-├── release/v0.1.0
-└── hotfix/xxx
+main (部署分支，Vercel 自动部署，由 develop 合并而来)
+└── develop (开发主分支)
+    ├── feature/xxx               ← Web 端功能（React 前端）
+    └── 编辑器工具 / 数据更新      ← 直接提交在 develop
 ```
 
 ### 9.2 分支命名规范
 
 ```
-feature/<功能名>    # 新功能开发，如 feature/calendar-month-view
-bugfix/<问题描述>   # Bug修复，如 bugfix/event-date-parse-error
-release/<版本号>    # 发布分支，如 release/v0.1.0
-hotfix/<问题描述>   # 紧急修复，如 hotfix/crash-on-empty-data
-docs/<内容>         # 文档更新
-refactor/<内容>     # 重构
+feature/<功能名>   # Web 新功能，如 feature/game-filter
+bugfix/<描述>      # Web Bug 修复
+refactor/<内容>    # 重构
+docs/<内容>        # 文档更新
 ```
 
 ### 9.3 Commit 规范
@@ -440,16 +429,26 @@ test(calendar): 添加日历组件单元测试
 chore(deps): 升级 vite 到最新版本
 ```
 
-### 9.4 Code Review 流程
+### 9.4 实际开发流程（solo + AI 主导）
+
+**Web 端功能：**
 
 ```
-1. 开发者创建 feature 分支
-2. 开发完成后发起 Pull Request → develop
-3. 至少 1 人 Code Review
-4. CI 检查通过 (Lint + Test + Build)
-5. 合并到 develop (Squash Merge)
-6. 定期从 develop 合并到 main (发布)
+1. 从 develop 切出 feature 分支
+2. 开发完成，npm run build 通过
+3. 快进合并回 develop（git merge --ff-only）
+4. 合并 develop → main（快进），触发 Vercel 自动部署
+5. 删除已合并的 feature 分支
 ```
+
+**编辑器 / 数据更新：**
+
+```
+1. 直接在 develop 提交（数据提交信息统一为 data: 更新活动数据）
+2. 编辑器「一键推送」自动完成：提交 develop → push → merge main → push → 切回 develop
+```
+
+无强制 Code Review / PR / Squash Merge；核心规则是「禁止未经用户确认的 commit 和 push」。
 
 ---
 
