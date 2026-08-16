@@ -369,6 +369,7 @@ Git管理数据版本    数据录入后台          CMS系统
 | 创建 GitHub 仓库 | main + develop 分支已推送 | ✅ 已完成 |
 | 今日高亮样式优化 | 蓝色实心圆 + 白色数字 | ✅ 已完成 |
 | 活动完成状态 + 筛选 | localStorage + 卡片切换 + 筛选栏 | ✅ 已完成 |
+| 筛选状态持久化 | usePersistedState + localStorage，刷新后保留筛选 | ✅ 已完成 |
 | GitHub Actions CI/CD | push/PR 触发 → lint → test → build | ✅ 已完成 |
 | 部署到 Vercel | https://hoyocalendar-nu.vercel.app | ✅ 已完成 |
 

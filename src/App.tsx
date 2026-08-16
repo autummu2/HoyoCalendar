@@ -1,7 +1,9 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useEvents } from './hooks/useEvents'
 import { useCompletedEvents } from './hooks/useCompletedEvents'
+import { usePersistedState } from './hooks/usePersistedState'
+import { GAME_META } from './types/events'
 import { buildCalendarGrid, getToday, parseDate, formatDate, isDateInRange } from './lib/date-utils'
 import { MONTH_LABELS } from './lib/constants'
 import { Header, formatWeekLabel, formatDayLabel } from './components/layout/Header'
@@ -13,6 +15,19 @@ import { TypeFilter } from './components/filter/TypeFilter'
 import { CompletionFilter } from './components/filter/CompletionFilter'
 
 type ViewMode = 'month' | 'week' | 'day'
+
+/** 剪除筛选里不在 validKeys 中的键；无变化时返回原引用（避免多余渲染） */
+function pruneFilterKeys(
+  filter: Record<string, 'include' | 'exclude'>,
+  validKeys: Set<string>,
+): Record<string, 'include' | 'exclude'> {
+  if (Object.keys(filter).every((k) => validKeys.has(k))) return filter
+  const next: Record<string, 'include' | 'exclude'> = {}
+  for (const [k, v] of Object.entries(filter)) {
+    if (validKeys.has(k)) next[k] = v
+  }
+  return next
+}
 
 export default function App() {
   // ===== 主题 =====
@@ -26,10 +41,11 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
 
-  // ===== 筛选状态（三态: undefined=无, 'include'=包含, 'exclude'=排除） =====
-  const [gameFilter, setGameFilter] = useState<Record<string, 'include' | 'exclude'>>({})
-  const [typeFilter, setTypeFilter] = useState<Record<string, 'include' | 'exclude'>>({})
-  const [completionFilter, setCompletionFilter] = useState<('incomplete' | 'complete')[]>([])
+  // ===== 筛选状态（三态: undefined=无, 'include'=包含, 'exclude'=排除）=====
+  // 持久化到 localStorage，刷新后保留上次的筛选
+  const [gameFilter, setGameFilter] = usePersistedState<Record<string, 'include' | 'exclude'>>('hoyo-calendar-game-filter', {})
+  const [typeFilter, setTypeFilter] = usePersistedState<Record<string, 'include' | 'exclude'>>('hoyo-calendar-type-filter', {})
+  const [completionFilter, setCompletionFilter] = usePersistedState<('incomplete' | 'complete')[]>('hoyo-calendar-completion-filter', [])
 
   // ===== 完成状态 =====
   const { isCompleted, toggleComplete } = useCompletedEvents()
@@ -45,6 +61,14 @@ export default function App() {
     }
     return [...seen].sort()
   }, [events])
+
+  // 数据加载完成后，剪除筛选里已不存在的类型/游戏键
+  // （类型改名/删除后，localStorage 里的旧键若不清理会导致日历全空）
+  useEffect(() => {
+    if (loading) return
+    setTypeFilter((prev) => pruneFilterKeys(prev, new Set(availableTypes)))
+    setGameFilter((prev) => pruneFilterKeys(prev, new Set(Object.keys(GAME_META))))
+  }, [loading, availableTypes, setTypeFilter, setGameFilter])
 
   // ===== 筛选后的活动 =====
   const filteredEvents = useMemo(() => {
