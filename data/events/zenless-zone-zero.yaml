@@ -33,7 +33,7 @@
   title: 危局强袭战0729
   type: 高难挑战
   start_date: '2026-07-29'
-  end_date: '2026-08-14'
+  end_date: '2026-08-13'
   color: '#f5a3a3'
 - id: zzz-高难-2026-08-式舆防卫战080
   game: zenless-zone-zero
@@ -42,3 +42,33 @@
   start_date: '2026-08-07'
   end_date: '2026-08-21'
   color: '#a0b9f8'
+- id: zzz-高难-2026-08-危局强袭战081
+  game: zenless-zone-zero
+  title: 危局强袭战0814
+  type: 高难挑战
+  start_date: '2026-08-14'
+  end_date: '2026-08-27'
+  color: '#f5a3a3'
+- id: zzz-卡池-2026-08-调频活动希格莉德
+  game: zenless-zone-zero
+  title: 调频活动-希格莉德/琉音/浮波柚叶/浅羽悠真
+  type: 卡池
+  start_date: '2026-08-19'
+  end_date: '2026-09-08'
+  color: '#f4f0a6'
+- id: zzz-常规-2026-08-嗯呢大派送活动说
+  game: zenless-zone-zero
+  title: 「『嗯呢』大派送！」
+  type: 常规活动
+  start_date: '2026-08-19'
+  end_date: '2026-09-08'
+  color: '#f4f0a6'
+  description: 【活动时间】 2026/08/19 10:00 ~ 2026/09/08 03:59 【参与条件】 绳网等级≥ 5 级，完成主线序章「兔与绳」并解锁 「活动」 功能后即可参与
+- id: zzz-常规-2026-08-咔滋酥脆出餐计划
+  game: zenless-zone-zero
+  title: 「咔滋酥脆出餐计划」
+  type: 常规活动
+  start_date: '2026-08-19'
+  end_date: '2026-09-07'
+  color: '#f4f0a6'
+  description: 【活动时间】 2026/08/19 10:00 ~ 2026/09/07 03:59 【活动奖励】 【参与条件】 绳网等级≥ 20 级，完成主线 第一章·幕间 后即可参与
