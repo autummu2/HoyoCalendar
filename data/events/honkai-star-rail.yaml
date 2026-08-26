@@ -92,3 +92,17 @@
   start_date: '2026-08-14'
   end_date: '2026-08-23'
   description: ▌活动时间 2026/08/14 04:00 - 2026/08/24 03:59 ▌参与条件 完成冒险任务「拟造花萼（金）• 回忆之蕾」 ▌活动说明 ●「花藏繁生」活动期间，挑战并通关「拟造花萼（金）」或「拟造花萼（赤）」时，可获得双倍奖励
+- id: hsr-版本-2026-09-46版本停服更新
+  game: honkai-star-rail
+  title: 4.6版本停服更新
+  type: 版本更新
+  start_date: '2026-09-30'
+  end_date: '2026-09-30'
+  color: '#ffffff'
+- id: hsr-高难-2026-08-异相仲裁军团再临
+  game: honkai-star-rail
+  title: 异相仲裁·军团再临
+  type: 高难挑战
+  start_date: '2026-08-26'
+  end_date: '2026-09-27'
+  color: '#f7d9a2'
