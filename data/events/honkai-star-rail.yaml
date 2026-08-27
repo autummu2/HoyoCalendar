@@ -106,3 +106,11 @@
   start_date: '2026-08-26'
   end_date: '2026-09-27'
   color: '#f7d9a2'
+- id: hsr-常规-2026-08-超限狂飙大奖赛
+  game: honkai-star-rail
+  title: 「超限：狂飙大奖赛」
+  type: 常规活动
+  start_date: '2026-08-26'
+  end_date: '2026-09-27'
+  color: '#fdcccc'
+  description: 千星城全新的赛车比赛将效仿「幻月游戏」，唯一胜利的队伍将登神成为「掌管交通（规则）的神」
