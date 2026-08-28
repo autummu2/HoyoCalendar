@@ -80,3 +80,33 @@
   end_date: '2026-08-23'
   color: '#f8e7d3'
   description: 【活动时间】 2026/08/07 10:00 ~ 2026/08/24 03:59 【活动奖励】 【参与条件】 绳网等级≥ 20 级，完成主线 第一章·幕间 后即可参与
+- id: zzz-常规-2026-08-极危通缉与悠游假
+  game: zenless-zone-zero
+  title: 「极危通缉与悠游假期」
+  type: 常规活动
+  start_date: '2026-08-24'
+  end_date: '2026-09-06'
+  color: '#e3ece9'
+  description: 【活动时间】 2026/08/24 10:00 ~ 2026/09/07 03:59 【活动奖励】 【参与条件】 绳网等级≥ 20 级，完成主线 第一章·幕间 后即可参与
+- id: zzz-常规-2026-08-叮咚见习邮差派件
+  game: zenless-zone-zero
+  title: 「叮咚！见习邮差派件中」
+  type: 常规活动
+  start_date: '2026-08-28'
+  end_date: '2026-09-13'
+  color: '#ebd6d6'
+  description: 【活动时间】 2026/08/28 10:00 ~ 2026/09/14 03:59 【活动奖励】 【参与条件】 绳网等级≥ 20 级，完成主线 第一章·幕间 后即可参与
+- id: zzz-前瞻-2026-08-32版本她与她的
+  game: zenless-zone-zero
+  title: 3.2 版本「她与她的隐秘往事」前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-08-28'
+  end_date: '2026-08-28'
+  color: '#cdede6'
+- id: zzz-版本-2026-09-绝区零32版本她
+  game: zenless-zone-zero
+  title: 《绝区零》3.2 版本「她与她的隐秘往事」停服更新
+  type: 版本更新
+  start_date: '2026-09-09'
+  end_date: '2026-09-09'
+  color: '#cdede6'
