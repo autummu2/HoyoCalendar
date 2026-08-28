@@ -110,3 +110,17 @@
   start_date: '2026-09-09'
   end_date: '2026-09-09'
   color: '#cdede6'
+- id: zzz-高难-2026-08-危局强袭战082
+  game: zenless-zone-zero
+  title: 危局强袭战0828
+  type: 高难挑战
+  start_date: '2026-08-28'
+  end_date: '2026-09-10'
+  color: '#f5a3a3'
+- id: zzz-高难-2026-08-式舆防卫战082
+  game: zenless-zone-zero
+  title: 式舆防卫战0821
+  type: 高难挑战
+  start_date: '2026-08-21'
+  end_date: '2026-09-03'
+  color: '#a0b9f8'
