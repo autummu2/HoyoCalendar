@@ -119,21 +119,21 @@
   title: 「冰绡鹄影」祈愿：「翾风回雪·奥黛塔(冰)」概率UP
   type: 卡池
   start_date: '2026-08-12'
-  end_date: '2026-09-01'
+  end_date: '2026-08-31'
   color: '#d9f1fd'
 - id: gi-卡池-2026-08-炉边烬影祈愿孤暝
   game: genshin-impact
   title: 「炉边烬影」祈愿：「孤暝厄月·阿蕾奇诺(火)」概率UP
   type: 卡池
   start_date: '2026-08-12'
-  end_date: '2026-09-01'
+  end_date: '2026-08-31'
   color: '#fcdada'
 - id: gi-卡池-2026-08-祈愿单手剑白湖冬
   game: genshin-impact
   title: 祈愿：「单手剑·白湖冬羽」「长柄武器·赤月之形」概率UP
   type: 卡池
   start_date: '2026-08-12'
-  end_date: '2026-09-01'
+  end_date: '2026-08-31'
   color: '#fde3d9'
 - id: gi-常规-2026-08-新芽相助初探雪原
   game: genshin-impact
