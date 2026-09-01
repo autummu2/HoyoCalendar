@@ -114,3 +114,10 @@
   end_date: '2026-09-27'
   color: '#fdcccc'
   description: 千星城全新的赛车比赛将效仿「幻月游戏」，唯一胜利的队伍将登神成为「掌管交通（规则）的神」
+- id: hsr-高难-2026-09-末日幻影仙客天狼
+  game: honkai-star-rail
+  title: 末日幻影·仙客天狼
+  type: 高难挑战
+  start_date: '2026-09-01'
+  end_date: '2026-10-04'
+  color: '#abbfed'
