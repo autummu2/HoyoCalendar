@@ -127,3 +127,26 @@
   - 莫弈
   - 陆景和
   - SSR
+- id: tea-常规-2026-09-爱的未定式夏彦篇
+  game: tears-of-themis
+  title: 「爱的未定式·夏彦篇」
+  type: 常规活动
+  start_date: '2026-09-03'
+  end_date: '2026-09-09'
+  color: '#cdefe9'
+  description: 邀请函、SSR、限时活动
+  source_url: https://www.miyoushe.com/wd/article/77934380
+  tags:
+  - 夏彦
+- id: tea-卡池-2026-09-换日线活动女神之
+  game: tears-of-themis
+  title: 夏彦SSR【换日线】
+  type: 卡池
+  start_date: '2026-09-03'
+  end_date: '2026-09-09'
+  color: '#cdefe9'
+  description: 邀请函、SSR、限时活动
+  source_url: https://www.miyoushe.com/wd/article/77934380
+  tags:
+  - 夏彦
+  - SSR
