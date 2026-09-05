@@ -109,7 +109,7 @@
   type: 版本更新
   start_date: '2026-09-09'
   end_date: '2026-09-09'
-  color: '#cdede6'
+  color: '#ffffff'
 - id: zzz-高难-2026-08-危局强袭战082
   game: zenless-zone-zero
   title: 危局强袭战0828
@@ -124,3 +124,17 @@
   start_date: '2026-08-21'
   end_date: '2026-09-03'
   color: '#a0b9f8'
+- id: zzz-卡池-2026-09-调频活动克拉蕾南
+  game: zenless-zone-zero
+  title: 调频活动-克拉蕾/南宫羽
+  type: 卡池
+  start_date: '2026-09-09'
+  end_date: '2026-09-30'
+  color: '#f0aaaa'
+- id: zzz-卡池-2026-09-调频活动洛克茜普
+  game: zenless-zone-zero
+  title: 调频活动-洛克茜/普罗米娅
+  type: 卡池
+  start_date: '2026-09-30'
+  end_date: '2026-10-20'
+  color: '#b9e1dc'
