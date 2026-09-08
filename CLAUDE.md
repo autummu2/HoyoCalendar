@@ -80,6 +80,13 @@ git branch -d feature/my-feature
 
 **禁止未经确认的提交和推送。** 每完成一个环节，等待用户确认后再执行 `git commit` 和 `git push`。不要自动连续提交。
 
+### 关于 git 历史的提醒
+
+用户在对话间隔期间会使用编辑器「一键推送」自行维护活动数据，这会产生大量 `data: 更新活动数据` 提交。因此：
+
+- 会话间 git 历史新增一批 `data:` 提交是正常现象，不要据此误判已有代码丢失
+- `git log`（尤其带 `-N` 截断时）可能看不到较早的 `feat`/`docs` 提交；判断某提交是否还在分支上，用 `git branch --contains <hash>` 或 `git merge-base --is-ancestor <hash> <branch>`，而不是靠截断的 `git log` 列表
+
 ---
 
 ## 🧠 行为准则
