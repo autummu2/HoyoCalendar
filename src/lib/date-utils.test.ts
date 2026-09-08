@@ -79,8 +79,9 @@ describe('buildCalendarGrid', () => {
   })
 
   it('contains today marked', () => {
+    const now = new Date()
     const today = getToday()
-    const grid = buildCalendarGrid(2026, 8)
+    const grid = buildCalendarGrid(now.getFullYear(), now.getMonth() + 1)
     const flat = grid.flat()
     const todayCell = flat.find((c) => c.date === today)
     expect(todayCell?.isToday).toBe(true)
