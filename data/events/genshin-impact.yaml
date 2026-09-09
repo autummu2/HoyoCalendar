@@ -38,14 +38,14 @@
   source_url: https://www.miyoushe.com/ys/article/76483710
 - id: gi-版本无神怜爱的雪国前瞻特别节目
   game: genshin-impact
-  title: 7.0版本「无神怜爱的雪国」前瞻特别节目
+  title: 《原神》7.0版本「无神怜爱的雪国」前瞻特别节目
   type: 前瞻直播
   start_date: '2026-07-31'
   end_date: '2026-07-31'
   color: '#7dc4ea'
 - id: gi-版本停服更新
   game: genshin-impact
-  title: 7.0版本停服更新
+  title: 《原神》7.0 版本「无神怜爱的雪国」停服更新
   type: 版本更新
   start_date: '2026-08-12'
   end_date: '2026-08-12'
@@ -184,14 +184,14 @@
   color: '#8779d2'
 - id: gi-前瞻-2026-09-71版本往冥府的
   game: genshin-impact
-  title: 7.1版本「往冥府的安魂歌」前瞻特别节目
+  title: 《原神》7.1 版本「往冥府的安魂歌」前瞻特别节目
   type: 前瞻直播
   start_date: '2026-09-12'
   end_date: '2026-09-12'
   color: '#7dc4ea'
 - id: gi-版本-2026-09-71版本停服更新
   game: genshin-impact
-  title: 7.1版本停服更新
+  title: 《原神》7.1 版本「往冥府的安魂歌」停服更新
   type: 版本更新
   start_date: '2026-09-23'
   end_date: '2026-09-23'
