@@ -19,12 +19,16 @@ from yaml_io import load_events, save_events, list_games, EVENT_TYPES, LEGACY_TY
 from extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
 
 TYPE_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "type_pool.json")
+LIST_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "list_state.json")
 
 FONT = ("Microsoft YaHei UI", 10)
 FONT_BOLD = ("Microsoft YaHei UI", 10, "bold")
 FONT_SMALL = ("Microsoft YaHei UI", 9)
 
 PAD = {"padx": 4, "pady": 2}
+
+EVENT_COLUMNS = ("title", "type", "date", "id")
+EVENT_HEADINGS = {"title": "标题", "type": "类型", "date": "日期", "id": "ID"}
 
 
 class EventEditor:
@@ -44,12 +48,15 @@ class EventEditor:
         # 类型库（同标签逻辑：从数据中动态收集，可增删，单选）
         self.type_pool: list[str] = []
         self.event_filter_map: list[int] = []  # display_index → real_index
-        self.event_sort = tk.StringVar(value="按开始日期")
-        self.event_order = tk.StringVar(value="正序")
+        self._sort_col = "date"        # 当前排序列（默认日期）
+        self._sort_desc = True         # 默认倒序，日期新的在上
+        self.type_filter: set[str] = set()  # 类型筛选，空 = 全部
+        self._show_id = False         # 是否显示 ID 列（默认隐藏）
         self.event_filter_range = tk.StringVar(value="all")
         self.event_search_var = tk.StringVar()
         self._collect_all_tags()
         self._collect_all_types()
+        self._restore_list_state()
 
         self._build_ui()
         self._refresh_game_list()
@@ -109,6 +116,43 @@ class EventEditor:
                 json.dump(self.type_pool, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"保存类型状态失败: {e}")
+
+    def _load_list_state(self) -> dict:
+        try:
+            if os.path.exists(LIST_STATE_FILE):
+                with open(LIST_STATE_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+        except Exception:
+            pass
+        return {}
+
+    def _save_list_state(self):
+        try:
+            os.makedirs(os.path.dirname(LIST_STATE_FILE), exist_ok=True)
+            with open(LIST_STATE_FILE, "w", encoding="utf-8") as f:
+                json.dump({
+                    "sort_col": self._sort_col,
+                    "sort_desc": self._sort_desc,
+                    "type_filter": sorted(self.type_filter),
+                    "show_id": self._show_id,
+                }, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"保存列表状态失败: {e}")
+
+    def _restore_list_state(self):
+        """恢复上次的排序/筛选状态，并剪除已不存在的类型"""
+        saved = self._load_list_state()
+        if saved.get("sort_col") in EVENT_COLUMNS:
+            self._sort_col = saved["sort_col"]
+        if isinstance(saved.get("sort_desc"), bool):
+            self._sort_desc = saved["sort_desc"]
+        tf = saved.get("type_filter")
+        if isinstance(tf, list):
+            self.type_filter = {t for t in tf if t in self.type_pool}
+        if isinstance(saved.get("show_id"), bool):
+            self._show_id = saved["show_id"]
 
     def _rebuild_type_pool(self):
         self._collect_all_types()
@@ -210,23 +254,44 @@ class EventEditor:
         ttk.Button(top, text="🚀 推送更新", command=self._git_push).pack(side=tk.RIGHT, padx=8)
         ttk.Separator(self.root, orient=tk.HORIZONTAL).pack(fill=tk.X)
 
-        # 主体三栏
-        body = ttk.Frame(self.root)
+        # 主体三栏（PanedWindow，可拖动分隔条调整宽度）
+        body = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         body.pack(fill=tk.BOTH, expand=True, **PAD)
 
         # ── 左栏：游戏列表 ──
         left = ttk.LabelFrame(body, text="游戏", padding=4)
-        left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 4))
         self.game_listbox = tk.Listbox(left, width=22, font=FONT, exportselection=False)
         self.game_listbox.pack(fill=tk.BOTH, expand=True)
         self.game_listbox.bind("<<ListboxSelect>>", self._on_game_select)
+        body.add(left, weight=0)
 
         # ── 中栏：活动列表 ──
         center = ttk.LabelFrame(body, text="活动列表", padding=4)
-        center.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=4)
 
+        # 筛选栏（列表上方）
+        filter_bar = ttk.Frame(center)
+        filter_bar.pack(fill=tk.X, pady=(0, 4))
+
+        self.type_filter_btn = ttk.Button(filter_bar, text="类型: 全部", command=self._open_type_filter)
+        self.type_filter_btn.pack(side=tk.LEFT)
+
+        ttk.Label(filter_bar, text="范围:", font=FONT_SMALL).pack(side=tk.LEFT, padx=(8, 0))
+        range_combo = ttk.Combobox(filter_bar, textvariable=self.event_filter_range, values=["全部", "本月", "近30天"],
+                                   state="readonly", width=6, font=FONT_SMALL)
+        range_combo.pack(side=tk.LEFT, padx=(2, 8))
+        range_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
+
+        ttk.Label(filter_bar, text="搜索:", font=FONT_SMALL).pack(side=tk.LEFT)
+        search_entry = ttk.Entry(filter_bar, textvariable=self.event_search_var, width=12, font=FONT_SMALL)
+        search_entry.pack(side=tk.LEFT, padx=2)
+        self.event_search_var.trace_add("write", lambda *a: self._refresh_event_list())
+
+        self.event_count_label = ttk.Label(filter_bar, text="", font=FONT_SMALL, foreground="gray")
+        self.event_count_label.pack(side=tk.RIGHT)
+
+        # 活动列表
         self.event_tree = ttk.Treeview(
-            center, columns=("title", "type", "date", "id"), show="headings", selectmode="browse",
+            center, columns=EVENT_COLUMNS, show="headings", selectmode="browse",
         )
         self.event_tree.heading("title", text="标题")
         self.event_tree.heading("type", text="类型")
@@ -234,46 +299,24 @@ class EventEditor:
         self.event_tree.heading("id", text="ID")
         self.event_tree.column("title", width=220)
         self.event_tree.column("type", width=90)
-        self.event_tree.column("date", width=135)
+        self.event_tree.column("date", width=100)
         self.event_tree.column("id", width=120)
+        self._apply_column_visibility()
         self.event_tree.pack(fill=tk.BOTH, expand=True)
         self.event_tree.bind("<<TreeviewSelect>>", self._on_event_select)
-
-        # 筛选排序栏
-        filter_bar = ttk.Frame(center)
-        filter_bar.pack(fill=tk.X, pady=(4, 0))
-
-        ttk.Label(filter_bar, text="排序:", font=FONT_SMALL).pack(side=tk.LEFT)
-        sort_combo = ttk.Combobox(filter_bar, textvariable=self.event_sort, values=["按开始日期", "按标题", "按类型"],
-                                  state="readonly", width=10, font=FONT_SMALL)
-        sort_combo.pack(side=tk.LEFT, padx=(2, 4))
-        sort_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
-
-        order_combo = ttk.Combobox(filter_bar, textvariable=self.event_order, values=["正序", "倒序"],
-                                   state="readonly", width=4, font=FONT_SMALL)
-        order_combo.pack(side=tk.LEFT, padx=(0, 8))
-        order_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
-
-        ttk.Label(filter_bar, text="范围:", font=FONT_SMALL).pack(side=tk.LEFT)
-        range_combo = ttk.Combobox(filter_bar, textvariable=self.event_filter_range, values=["全部", "本月", "近30天"],
-                                   state="readonly", width=6, font=FONT_SMALL)
-        range_combo.pack(side=tk.LEFT, padx=(2, 8))
-        range_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_event_list())
-
-        ttk.Label(filter_bar, text="搜索:", font=FONT_SMALL).pack(side=tk.LEFT)
-        search_entry = ttk.Entry(filter_bar, textvariable=self.event_search_var, width=14, font=FONT_SMALL)
-        search_entry.pack(side=tk.LEFT, padx=2)
-        self.event_search_var.trace_add("write", lambda *a: self._refresh_event_list())
+        self.event_tree.bind("<Button-1>", self._on_tree_heading_click)
 
         btn_frame = ttk.Frame(center)
         btn_frame.pack(fill=tk.X, pady=(4, 0))
         ttk.Button(btn_frame, text="+ 新建活动", command=self._new_event).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="🗑 删除选中", command=self._delete_event).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="⚙ 设置", command=self._open_list_settings).pack(side=tk.RIGHT, padx=2)
         ttk.Button(btn_frame, text="📥 解析公告", command=self._open_parser).pack(side=tk.RIGHT, padx=2)
+        body.add(center, weight=1)
 
         # ── 右栏：编辑表单 ──
         right = ttk.LabelFrame(body, text="编辑活动", padding=8)
-        right.pack(side=tk.LEFT, fill=tk.BOTH, padx=(4, 0))
+        body.add(right, weight=0)
         right.columnconfigure(1, weight=1)
 
         row = 0
@@ -814,14 +857,127 @@ class EventEditor:
         # 当前系统类型即中文标签，直接返回
         return label
 
+    def _short_date(self, d: str) -> str:
+        """去掉年份，仅展示 MM-DD（年份信息仍保留在原始数据中）"""
+        return d[5:] if len(d) >= 10 else d
+
+    def _event_sort_key(self, ev: dict):
+        col = self._sort_col
+        if col == "title":
+            return ev.get("title", "")
+        if col == "type":
+            return self._type_label(ev.get("type", ""))
+        if col == "id":
+            return ev.get("id", "")
+        return ev.get("start_date", "")  # date
+
+    def _update_tree_headings(self):
+        for col in EVENT_COLUMNS:
+            arrow = ""
+            if col == self._sort_col:
+                arrow = " ▼" if self._sort_desc else " ▲"
+            self.event_tree.heading(col, text=EVENT_HEADINGS[col] + arrow)
+
+    def _apply_column_visibility(self):
+        if self._show_id:
+            self.event_tree["displaycolumns"] = EVENT_COLUMNS
+        else:
+            self.event_tree["displaycolumns"] = ("title", "type", "date")
+
+    def _open_list_settings(self):
+        dlg = tk.Toplevel(self.root)
+        dlg.title("列表设置")
+        dlg.transient(self.root)
+        dlg.grab_set()
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        dlg.geometry(f"240x100+{rx+(rw-240)//2}+{ry+(rh-100)//2}")
+
+        show_id_var = tk.BooleanVar(value=self._show_id)
+        ttk.Checkbutton(dlg, text="显示 ID 列", variable=show_id_var).pack(anchor=tk.W, padx=16, pady=(14, 4))
+
+        def apply():
+            self._show_id = show_id_var.get()
+            self._apply_column_visibility()
+            self._save_list_state()
+            dlg.destroy()
+
+        ttk.Button(dlg, text="确定", command=apply).pack(pady=8)
+
+    def _update_type_filter_label(self):
+        n = len(self.type_filter)
+        if n == 0:
+            text = "类型: 全部"
+        elif n == 1:
+            text = "类型: " + next(iter(self.type_filter))
+        else:
+            text = f"类型: {n} 种"
+        self.type_filter_btn.config(text=text)
+
+    def _on_tree_heading_click(self, event):
+        if self.event_tree.identify_region(event.x, event.y) != "heading":
+            return
+        col_id = self.event_tree.identify_column(event.x)  # 形如 "#1"
+        idx = int(col_id[1:]) - 1
+        if idx < 0 or idx >= len(EVENT_COLUMNS):
+            return
+        col = EVENT_COLUMNS[idx]
+        if col == self._sort_col:
+            self._sort_desc = not self._sort_desc
+        else:
+            self._sort_col = col
+            self._sort_desc = (col == "date")  # 日期默认新的在上，其余正序
+        self._save_list_state()
+        self._refresh_event_list()
+
+    def _open_type_filter(self):
+        dlg = tk.Toplevel(self.root)
+        dlg.title("筛选活动类型")
+        dlg.transient(self.root)
+        dlg.grab_set()
+        rx, ry = self.root.winfo_x(), self.root.winfo_y()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        h = min(440, 130 + 26 * max(len(self.type_pool), 1))
+        dlg.geometry(f"260x{h}+{rx+(rw-260)//2}+{ry+(rh-h)//2}")
+
+        ttk.Label(dlg, text="勾选要显示的类型（不勾选 = 全部）", font=FONT_SMALL).pack(padx=12, pady=(10, 4))
+
+        chk_frame = ttk.Frame(dlg)
+        chk_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=4)
+        vars_map = {}
+        for t in self.type_pool:
+            var = tk.BooleanVar(value=(t in self.type_filter))
+            vars_map[t] = var
+            ttk.Checkbutton(chk_frame, text=t, variable=var).pack(anchor=tk.W)
+
+        def apply():
+            self.type_filter = {t for t, v in vars_map.items() if v.get()}
+            self._save_list_state()
+            dlg.destroy()
+            self._refresh_event_list()
+
+        def clear():
+            self.type_filter = set()
+            self._save_list_state()
+            dlg.destroy()
+            self._refresh_event_list()
+
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(fill=tk.X, padx=12, pady=8)
+        ttk.Button(btn_frame, text="清除筛选", command=clear).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text="应用", command=apply).pack(side=tk.RIGHT)
+
     def _refresh_event_list(self):
         today = datetime.date.today()
         search = self.event_search_var.get().strip().lower()
 
-        # 筛选 + 排序
+        # 筛选
         filtered: list[tuple[int, dict]] = []
         for i, ev in enumerate(self.events):
             start = ev.get("start_date", "")
+            # 类型筛选
+            if self.type_filter and self._type_label(ev.get("type", "")) not in self.type_filter:
+                continue
             # 范围过滤
             if self.event_filter_range.get() == "本月":
                 if not start or start[:7] != today.strftime("%Y-%m"):
@@ -840,16 +996,7 @@ class EventEditor:
             filtered.append((i, ev))
 
         # 排序
-        sort_key = self.event_sort.get()
-        reverse = self.event_order.get() == "倒序"
-        if sort_key == "按开始日期":
-            filtered.sort(key=lambda x: x[1].get("start_date", ""), reverse=reverse)
-        elif sort_key == "按标题":
-            filtered.sort(key=lambda x: x[1].get("title", ""), reverse=reverse)
-        elif sort_key == "按类型":
-            filtered.sort(key=lambda x: self._type_label(x[1].get("type", "")), reverse=reverse)
-        else:
-            filtered.sort(key=lambda x: x[1].get("start_date", ""), reverse=reverse)
+        filtered.sort(key=lambda x: self._event_sort_key(x[1]), reverse=self._sort_desc)
 
         self.event_filter_map = [f[0] for f in filtered]
 
@@ -860,10 +1007,14 @@ class EventEditor:
                 values=(
                     ev.get("title", ""),
                     self._type_label(ev.get("type", "")),
-                    f"{ev.get('start_date','')} ~ {ev.get('end_date','')}",
+                    f"{self._short_date(ev.get('start_date',''))} ~ {self._short_date(ev.get('end_date',''))}",
                     ev.get("id", ""),
                 ),
             )
+
+        self._update_tree_headings()
+        self._update_type_filter_label()
+        self.event_count_label.config(text=f"共 {len(filtered)} 条")
 
     def _on_event_select(self, event):
         sel = self.event_tree.selection()
