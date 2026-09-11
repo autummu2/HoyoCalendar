@@ -192,3 +192,17 @@
   end_date: '2026-10-18'
   color: '#f1f2e8'
   description: 排除一切不可能，剩下的再不可思议也是真相…吗？
+- id: zzz-高难-2026-09-危局强袭战091
+  game: zenless-zone-zero
+  title: 危局强袭战0911
+  type: 高难挑战
+  start_date: '2026-09-11'
+  end_date: '2026-09-24'
+  color: '#f5a3a3'
+- id: zzz-高难-2026-09-式舆防卫战090
+  game: zenless-zone-zero
+  title: 式舆防卫战0904
+  type: 高难挑战
+  start_date: '2026-09-04'
+  end_date: '2026-09-17'
+  color: '#a0b9f8'
