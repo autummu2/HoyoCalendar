@@ -74,16 +74,26 @@ def load_events(game_id: str) -> list[dict]:
 
 
 def save_events(game_id: str, events: list[dict]) -> str:
-    """将活动列表写入 YAML 文件，返回文件路径"""
+    """将活动列表写入 YAML 文件，返回文件路径
+
+    写入前过滤掉不完整的空白条目（id/title/日期为空），
+    避免「新建活动」产生的占位条目被误存进数据文件，
+    从而导致前端整文件校验失败、该游戏活动全部不显示。
+    """
     filename = GAME_FILES.get(game_id)
     if not filename:
         raise ValueError(f"未知游戏: {game_id}")
 
     filepath = DATA_DIR / filename
 
+    complete = [
+        ev for ev in events
+        if ev.get("id") and ev.get("title") and ev.get("start_date") and ev.get("end_date")
+    ]
+
     with open(filepath, "w", encoding="utf-8") as f:
         yaml.dump(
-            events,
+            complete,
             f,
             allow_unicode=True,
             default_flow_style=False,
