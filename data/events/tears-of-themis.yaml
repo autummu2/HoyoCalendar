@@ -150,3 +150,21 @@
   tags:
   - 夏彦
   - SSR
+- id: tea-常规-2026-09-星航寻梦左然幻航
+  game: tears-of-themis
+  title: 「星航寻梦」-左然MR【幻航】
+  type: 常规活动
+  start_date: '2026-09-10'
+  end_date: '2026-09-16'
+  color: '#f9d9da'
+  description: 活动期间，律师可通过【未名晶片】兑换或活动礼包获取【暖绒小睡帽·红】，抓取各色礼球。抓取到的礼球将自动转化为【女神之泪】、【未名晶片】、思绪养成素材等随机奖励。累计抓取10个金色礼球即可获得左然限定MR思绪【幻航】
+  tags:
+  - 左然
+  - MR
+- id: tea-大月-2026-09-秋颂绮思
+  game: tears-of-themis
+  title: 「秋颂绮思」
+  type: 大月卡
+  start_date: '2026-09-10'
+  end_date: '2026-09-14'
+  color: '#f7eddb'
