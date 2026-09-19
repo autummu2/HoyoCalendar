@@ -168,3 +168,31 @@
   start_date: '2026-09-10'
   end_date: '2026-09-14'
   color: '#f7eddb'
+- id: tea-卡池-2026-09-莫弈生日挚礼
+  game: tears-of-themis
+  title: 莫弈SSR【挚礼】
+  type: 卡池
+  start_date: '2026-09-20'
+  end_date: '2026-09-29'
+  color: '#f9f2e8'
+  tags:
+  - 莫弈
+  - SSR
+- id: tea-常规-2026-09-岁悦同欢莫弈篇
+  game: tears-of-themis
+  title: 「岁悦同欢·莫弈篇」生日活动
+  type: 常规活动
+  start_date: '2026-09-20'
+  end_date: '2026-09-29'
+  color: '#f9f2e8'
+  tags:
+  - 莫弈
+- id: tea-常规-2026-09-岁悦同欢莫弈篇生
+  game: tears-of-themis
+  title: 「岁悦同欢·莫弈篇」生日拼图
+  type: 常规活动
+  start_date: '2026-09-17'
+  end_date: '2026-09-24'
+  color: '#f9f2e8'
+  tags:
+  - 莫弈
