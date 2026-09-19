@@ -206,3 +206,10 @@
   start_date: '2026-09-04'
   end_date: '2026-09-17'
   color: '#a0b9f8'
+- id: zzz-高难-2026-09-式舆防卫战091
+  game: zenless-zone-zero
+  title: 式舆防卫战0918
+  type: 高难挑战
+  start_date: '2026-09-18'
+  end_date: '2026-10-01'
+  color: '#a0b9f8'
