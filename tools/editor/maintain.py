@@ -6,14 +6,14 @@
 - 编辑器 main.py 的「自动化维护」按键
 
 先 chdir 到本脚本目录（日志与编辑器状态文件用相对路径），再对每个游戏依次执行
-「提取 + 校准 → 落盘」：原神走 genshin.pipeline.run，星铁走 starrail.run，
-两者都产出各自目录下的 extracted_*.json，再交给 apply_events.main 落盘。
+「提取 + 校准 → 落盘」：原神走 genshin.pipeline.run，星铁走 starrail.run，绝区零走
+zenless.run，三者都产出各自目录下的 extracted_*.json，再交给 apply_events.main 落盘。
 
 全程 stdout 追加写入 logs/YYYY-MM-DD.log（UTF-8）。自动化运行无人值守，
 日志是事后核查「那天到底干了什么」的唯一依据——尤其是正文接口被风控时，
 本轮结果会静默变少，只有看日志里的「正文抓取」与「跳过（日期不完整）」才能分辨。
 
-两个游戏各自 try 住：一个出问题不该拖累另一个，否则日志里只剩半场，更难查。
+每个游戏各自 try 住：一个出问题不该拖累其余，否则日志里只剩半场，更难查。
 """
 import datetime
 import os
@@ -23,6 +23,7 @@ import traceback
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import starrail
+import zenless
 from common import apply_events
 from genshin import pipeline as genshin
 
@@ -61,7 +62,12 @@ def _starrail():
     apply_events.main("honkai-star-rail", starrail.OUT_FILE)
 
 
-GAMES = [("原神", _genshin), ("崩坏：星穹铁道", _starrail)]
+def _zenless():
+    zenless.run()
+    apply_events.main("zenless-zone-zero", zenless.OUT_FILE)
+
+
+GAMES = [("原神", _genshin), ("崩坏：星穹铁道", _starrail), ("绝区零", _zenless)]
 
 
 def main():

@@ -20,6 +20,7 @@ tools/editor/list_state.json
 tools/editor/post_analysis.json
 tools/editor/genshin/extracted_full.json
 tools/editor/starrail/extracted_hsr.json
+tools/editor/zenless/extracted_zzz.json
 
 # Editor directories and files
 .vscode/*

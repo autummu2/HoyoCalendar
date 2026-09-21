@@ -38,11 +38,14 @@ GAME_ID_PREFIX = {
     "zenless-zone-zero": "zzz",
 }
 
-# 米游社文章路径。只登记已核对过的两个游戏——未核对的不猜，宁可不给 source_url
+# 米游社文章路径。只登记已核对过的游戏——未核对的不猜，宁可不给 source_url
 # 也不要落一个 404 的链接。
+# 核对办法：请求 /article/<slug>/<id>，有效 slug 返回 200（SPA 壳，99610 字节），
+# 无效的（zzzz / zzz2 / nothinghere）返回 404 且只有 9 字节。ys/sr/bh3/wd/zzz 均为 200。
 GAME_URL_PATH = {
     "genshin-impact": "ys",
     "honkai-star-rail": "sr",
+    "zenless-zone-zero": "zzz",
 }
 
 EVENT_TYPES = [
