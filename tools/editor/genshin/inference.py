@@ -1,6 +1,6 @@
 """原神周期性活动推理。
 
-依据 tools/editor/EXTRACTION_RULES.md 的规则，纯日期推算未来 N 天内的周期性活动：
+依据 tools/editor/genshin/RULES.md 的规则，纯日期推算未来 N 天内的周期性活动：
 - 深境螺旋：每月 16 号刷新，一期 16号 ~ 次月15号
 - 幻想真境剧诗：每月 1 号刷新，一期 1号 ~ 月末
 - 版本更新：每周三，42 天一个版本
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import datetime
 
-import keys
+from common import keys
 
 GAME = "genshin-impact"
 
@@ -216,7 +216,7 @@ def resolve_version_period(entries: list[dict], version_dates: list[str | dateti
     """
     updates = sorted(datetime.date.fromisoformat(str(v)) for v in version_dates)
     # end = 下个版本更新日 − 1。活动若属于**最新已知版本**，updates 里还没有下一个
-    # 版本更新日（推理出的未来那一期此刻尚未并入数据，见 run_pipeline 的调用顺序），
+    # 版本更新日（推理出的未来那一期此刻尚未并入数据，见 pipeline.py 的调用顺序），
     # 就会算不出 end。按 42 天周期补一期兜底。
     if updates:
         updates = sorted(set(updates) | {updates[-1] + datetime.timedelta(days=VERSION_CYCLE_DAYS)})
@@ -285,7 +285,7 @@ def infer_banner_dates(announcements: list[dict], version_dates: list[str | date
 
 
 if __name__ == "__main__":
-    import yaml_io
+    from common import yaml_io
 
     today = datetime.date.today()
     anchor = extract_version_anchor(yaml_io.load_events(GAME))

@@ -1,6 +1,7 @@
 # 活动信息提取规则（原神）
 
-自动化维护活动信息时，从公告/动态中提取字段的规则依据。当前覆盖**原神**；星铁、绝区零的规则后续按各自公告格式补充。
+自动化维护活动信息时，从公告/动态中提取字段的规则依据。**只覆盖原神**；
+星铁的规则见 [../starrail/RULES.md](../starrail/RULES.md)。
 
 ## 数据来源
 
@@ -11,16 +12,19 @@
 
 ## 模块分工
 
+本管线的代码在 `tools/editor/genshin/`，共用底层在 `tools/editor/common/`。
+
 | 文件 | 职责 |
 |---|---|
-| `extractor.py` | 米游社公告抓取 + 分类（按标题）+ 正文解析 |
-| `bilibili.py` | B站动态抓取 + 解析 + 与米游社结果合并（B站命中时带 `source` 字段标明权威来源） |
-| `inference.py` | 周期性事件推理（纯函数，锚点由调用方从数据文件推导后传入） |
-| `keys.py` | 条目主键（身份判定），新增与校准共用 |
-| `calibrate.py` | 用权威来源校准已有条目（纯函数），打 `calibrated` 标记 |
-| `apply_events.py` | 新增落盘（只新增，不改已有条目） |
-| `run_pipeline.py` | 驱动整条管线，产出 `extracted_full.json` |
-| `maintain.py` / `maintain.bat` | 外部一键入口：`run_pipeline` → `apply_events`，stdout 追加写入 `logs/YYYY-MM-DD.log` |
+| `common/extractor.py` | 米游社公告抓取 + 分类（按标题）+ 正文解析 |
+| `common/bilibili.py` | B站动态抓取 + 解析 + 与米游社结果合并（B站命中时带 `source` 字段标明权威来源） |
+| `genshin/inference.py` | 周期性事件推理（纯函数，锚点由调用方从数据文件推导后传入） |
+| `common/keys.py` | 条目主键（身份判定），新增与校准共用 |
+| `common/calibrate.py` | 用权威来源校准已有条目（纯函数），打 `calibrated` 标记 |
+| `common/apply_events.py` | 新增落盘（只新增，不改已有条目） |
+| `genshin/pipeline.py` | 驱动整条管线，产出 `genshin/extracted_full.json` |
+| `common/colors.py` | 封面图取色（两条管线共用） |
+| `maintain.py` / `maintain.bat` | 外部一键入口：两条管线各跑「提取 → 落盘」，stdout 追加写入 `logs/YYYY-MM-DD.log` |
 
 > 前瞻特别节目不在米游社公告栏里，需去**资讯栏**或 **B站动态**获取。B站接口/账号 uid 待实现时确认。
 
@@ -148,7 +152,7 @@
 - 只覆盖 `title / start_date / end_date` 三个值字段，其余（id/color/description/source_url…）一律不动。
 - **匹配逻辑与提取阶段共用同一组函数**（`merge_activities` / `merge_banners` /
   `merge_special_banners` 等），避免两套实现漂移：这些函数在 B站命中时会带上 `source` 字段，
-  `run_pipeline._build_sources` 据此汇总成权威值索引。
+  `genshin/pipeline._build_sources` 据此汇总成权威值索引。
 - 由于是「只新增 + 一次性校准」，**不需要状态文件，也不存在与人工干预的冲突**：
   人工改过的条目若被权威来源确认过就带标记、不再被动；版本延期只需人工改一次版本更新日期，
   后续推理自动跟着走（锚点从数据文件推导）。
@@ -157,11 +161,17 @@
 
 - **写入前校验**：`id / title / start_date / end_date` 非空，日期匹配 `YYYY-MM-DD`。
   前端对整文件做 Zod 校验，一条坏数据会让该游戏全部活动不显示。
-- **日期闸（三层防护）**：① `parse_activity_body` 认不出的段 → ② `run_pipeline` 输出前丢弃
+- **日期闸（三层防护）**：① `parse_activity_body` 认不出的段 → ② `genshin/pipeline.py` 输出前丢弃
   无完整日期的条目并报告 → ③ `apply_events` 再兜一次。任何一层单独存在都不够，
   下次再来个新格式仍会漏。被丢弃的条目会在运行日志里以 `x` 列出。
 - **dry-run**：先出「新增 X / 跳过 Z」预览，确认后再落盘。
-- **幂等**：连跑两次，第二次必须 0 新增 0 校准、且 YAML 字节级不变。
+- **幂等**：连跑两次，第二次必须 **0 新增**。但**不要期望第二次字节级不变**——
+  同一次运行里 `calibrate` 在 `apply_events` **之前**跑，所以本轮新加进来的条目
+  要等**下一轮**才被校准。表现为第二轮多打一个 `calibrated` 标记（值本身通常是对的，
+  标记行内容是「一致」）。实测 2026-09-21 星铁：第一轮 4 新增，第二轮 0 新增 +
+  1 个新标记（`虚构叙事·立界开篇` ← 米游社版本更新说明）。标记是一次性的
+  （「有标记不再重复处理」），所以**第三轮才是真正的空跑**——这一条由设计保证，未实测
+  （避免连着发请求触发米游社风控）。
 
 ## 七、常规活动 / 版本大活动提取
 
@@ -237,7 +247,7 @@
 
 `retcode` 必须上报：风控的 `message` 是空的，只报 message 的话日志里只有「API 返回错误: 」，事后无法分辨原因。
 
-**已落盘条目不抓正文（降风控的主要手段）**：风控的根因是请求数，而正文（`fetch_post`）是请求的大头。稳态下一次运行原本要抓 ~20 次正文，其中绝大多数是为了「确认某活动已经存在」——正文只用于取日期/描述/配图，都是**新增**才需要的东西。因此 `run_pipeline._needs_body` 会先用 `keys.find_duplicate` 对数据文件预筛，命中的条目**跳过正文抓取**。实测 20 次 → 2 次（1 条对不上键的版本大活动 + 1 次维护预告）。
+**已落盘条目不抓正文（降风控的主要手段）**：风控的根因是请求数，而正文（`fetch_post`）是请求的大头。稳态下一次运行原本要抓 ~20 次正文，其中绝大多数是为了「确认某活动已经存在」——正文只用于取日期/描述/配图，都是**新增**才需要的东西。因此 `genshin/pipeline._needs_body` 会先用 `keys.find_duplicate` 对数据文件预筛，命中的条目**跳过正文抓取**。实测 20 次 → 2 次（1 条对不上键的版本大活动 + 1 次维护预告）。
 
 设计上有三个要点，改动这块时别踩：
 
@@ -261,6 +271,6 @@
    ```bat
    setx MIYOUSHE_COOKIE "整串粘贴到这里"
    ```
-4. 重新运行管线即可。`run_pipeline.py` 会先从注册表预读进 `os.environ`，已开着的终端/编辑器无需重启。
+4. 重新运行管线即可。`genshin/pipeline.py` 会先从注册表预读进 `os.environ`，已开着的终端/编辑器无需重启。
 
 cookie 属凭据，**不要写进仓库、不要贴进对话**；未设置时该功能自动跳过，不影响运行。

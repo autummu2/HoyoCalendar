@@ -15,8 +15,8 @@ import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 
-from yaml_io import load_events, save_events, list_games, EVENT_TYPES, LEGACY_TYPE_MAP, GAME_FILES, DATA_DIR, PROJECT_ROOT
-from extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
+from common.yaml_io import load_events, save_events, list_games, EVENT_TYPES, LEGACY_TYPE_MAP, GAME_FILES, DATA_DIR, PROJECT_ROOT
+from common.extractor import extract, fetch_post, fetch_post_list, html_to_text, GIDS_MAP
 
 TYPE_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "type_pool.json")
 LIST_STATE_FILE = os.path.join(PROJECT_ROOT, "tools", "editor", "list_state.json")

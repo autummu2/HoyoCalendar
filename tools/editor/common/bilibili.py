@@ -1,6 +1,6 @@
 """B站动态抓取 — 从米哈游官方账号动态获取公告栏拿不到的信息。
 
-用途（见 tools/editor/EXTRACTION_RULES.md）：
+用途（见 tools/editor/genshin/RULES.md）：
 - 前瞻直播时间、版本名（米游社公告栏没有前瞻公告）
 - 卡池日期（米游社卡池公告是图片，读不到文字）
 

@@ -8,6 +8,7 @@
 | 版本大活动 | B站活动动态的「〓活动时间〓」 | B站活动动态 |
 | 前瞻直播 | B站前瞻公告（版本名 + 确认日期） | B站前瞻公告 |
 | 版本更新 | 米游社维护预告（日期 + 版本号 + 版本名） | 米游社维护预告 |
+| 高难挑战（星铁） | 米游社版本更新说明的「■玩法」段 | 米游社版本更新说明 |
 
 常规活动、大月卡、幽境危战、深境螺旋/幻想真境剧诗**不校准**——前两者没有可靠的
 B站日期来源（B站活动动态只覆盖多阶段的版本大活动），后者无公告、本就走推理。
@@ -27,14 +28,17 @@ from __future__ import annotations
 
 import datetime
 
-import keys
+from common import keys
 
 MARKER = "calibrated"
 WINDOW_DAYS = 30
 TAG_PENDING_VERSION = "待确认版本"
 
-# 纳入校准的类型（见模块说明）
-CALIBRATED_TYPES = {"卡池", "版本大活动", "前瞻直播", "版本更新"}
+# 纳入校准的类型（见模块说明）。
+# 高难挑战是给星铁加的：星铁的高难期名与日期都写在版本更新说明里（权威来源），
+# 而它恰恰是最容易错的一类（期名/日期都得从正文里抄）。对原神是空转——
+# 原神的高难（深境螺旋/幻想真境剧诗）无公告，sources 里没有该类型的键。
+CALIBRATED_TYPES = {"卡池", "版本大活动", "前瞻直播", "版本更新", "高难挑战"}
 
 # 值字段：只覆盖这些，其余字段（id/color/description/tags/post_id…）一律不动
 VALUE_FIELDS = ("title", "start_date", "end_date")
@@ -47,11 +51,14 @@ def _date(value) -> datetime.date | None:
         return None
 
 
-def sources_from(livestreams: list[dict], maintenance: dict | None) -> dict:
+def sources_from(livestreams: list[dict], maintenance: dict | None,
+                 game_name: str = "原神") -> dict:
     """构造「版本更新 / 前瞻直播」的权威值索引。
 
     livestreams：bilibili.find_livestreams 输出（{version, name, date?, id}）
     maintenance：维护预告解析结果 {version, date, name?}，可缺
+    game_name：标题里的游戏名。title 是 VALUE_FIELDS 之一，会被写回条目，
+               所以这里拼出的标题必须与数据文件里的**逐字一致**。
 
     版本更新：日期以米游社维护预告为准（更新前 2 天发布，最权威），故覆盖 B站前瞻来源；
               无维护预告时退回 B站前瞻，只补版本名、不动日期（推理值已够准）。
@@ -63,14 +70,14 @@ def sources_from(livestreams: list[dict], maintenance: dict | None) -> dict:
         v, name = ls.get("version"), ls.get("name")
         if not v or not name:
             continue
-        live = {"title": f"《原神》{v} 版本「{name}」前瞻特别节目",
+        live = {"title": f"《{game_name}》{v} 版本「{name}」前瞻特别节目",
                 "source": "B站前瞻公告"}
         if ls.get("date"):
             live["start_date"] = ls["date"]
             live["end_date"] = ls["date"]
         src[("前瞻直播", "v", v)] = live
         src.setdefault(("版本更新", "v", v),
-                       {"title": f"《原神》{v} 版本「{name}」停服更新",
+                       {"title": f"《{game_name}》{v} 版本「{name}」停服更新",
                         "source": "B站前瞻公告"})
 
     v = (maintenance or {}).get("version")
@@ -80,7 +87,7 @@ def sources_from(livestreams: list[dict], maintenance: dict | None) -> dict:
             entry["start_date"] = maintenance["date"]
             entry["end_date"] = maintenance["date"]
         if maintenance.get("name"):
-            entry["title"] = f"《原神》{v} 版本「{maintenance['name']}」停服更新"
+            entry["title"] = f"《{game_name}》{v} 版本「{maintenance['name']}」停服更新"
         src[("版本更新", "v", v)] = entry
 
     return src
@@ -90,7 +97,7 @@ def calibrate(events: list[dict], sources: dict, today: datetime.date | None = N
               ) -> tuple[list[dict], list[str]]:
     """用权威来源校准已有条目，返回 (校准后的事件列表, 变更描述)。
 
-    sources：{event_key: {值字段…, "source": 依据名}}，由 run_pipeline 汇总各来源后传入。
+    sources：{event_key: {值字段…, "source": 依据名}}，由各管线汇总各来源后传入。
     today：只处理 start_date >= today − WINDOW_DAYS 的未标记条目。
     """
     today = today or datetime.date.today()

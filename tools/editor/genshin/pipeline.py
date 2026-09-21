@@ -6,11 +6,14 @@
 （calibrate.py，只改值 + 打 calibrated 标记），有变更直接落盘数据文件。
 """
 import datetime
-import io
 import json
 import os
-import colorsys
+import sys
 import winreg
+from pathlib import Path
+
+# 允许直接 `python genshin/pipeline.py`（此时 sys.path[0] 是本目录，找不到兄弟包）
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # 凭据存注册表（setx 写的也是这里），须在 import bilibili / extractor 前读入 os.environ
 # （见记忆 bili-sessdata-registry）。两个都可选，缺任何一个都不影响运行。
@@ -24,46 +27,19 @@ try:
 except OSError:
     pass
 
-import requests
-from PIL import Image
-
-from extractor import (fetch_post_list, fetch_post, find_activity_announcements,
-                       find_challenge_announcements, find_battle_pass_announcements,
-                       find_banner_announcements, find_special_banner_announcements,
-                       find_maintenance_posts, parse_maintenance_body,
-                       parse_activity_body)
-import bilibili
-import calibrate
-import inference
-import keys
-import yaml_io
+from common import bilibili, calibrate, keys, yaml_io
+from common.colors import FALLBACK_COLOR, pastel_from_url
+from common.extractor import (fetch_post_list, fetch_post, find_activity_announcements,
+                              find_challenge_announcements, find_battle_pass_announcements,
+                              find_banner_announcements, find_special_banner_announcements,
+                              find_maintenance_posts, parse_maintenance_body,
+                              parse_activity_body)
+from genshin import inference
 
 GAME = "genshin-impact"
-FALLBACK_COLOR = "#cce0f0"
 
-
-def pastel_from_url(url: str) -> str:
-    """下载封面图，取饱和度最高的主色，调成浅色 pastel（黑字可读）。"""
-    try:
-        r = requests.get(url, timeout=15)
-        im = Image.open(io.BytesIO(r.content)).convert("RGB").resize((48, 48))
-        counts = im.getcolors(48 * 48)  # [(count, (r,g,b))]
-        counts.sort(reverse=True)
-        best = None
-        for _cnt, (r_, g_, b_) in counts:
-            mx, mn = max(r_, g_, b_), min(r_, g_, b_)
-            if mx - mn >= 25 and mx < 250:  # 跳过灰度 / 近纯白
-                best = (r_, g_, b_)
-                break
-        if best is None:
-            best = counts[0][1]
-    except Exception:
-        return FALLBACK_COLOR
-    h, _l, s = colorsys.rgb_to_hls(best[0] / 255, best[1] / 255, best[2] / 255)
-    s = min(s, 0.7)
-    l = 0.84
-    r2, g2, b2 = colorsys.hls_to_rgb(h, l, s)
-    return "#{:02x}{:02x}{:02x}".format(int(r2 * 255), int(g2 * 255), int(b2 * 255))
+# 产物写在自己目录下，与运行时的 cwd 无关
+OUT_FILE = Path(__file__).resolve().parent / "extracted_full.json"
 
 
 def _build_sources(merged, banners, dyn, posts):
@@ -295,9 +271,9 @@ def run():
          if k in e}
         for e in all_events
     ]
-    with open("extracted_full.json", "w", encoding="utf-8") as f:
+    with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
-    print(f"written {len(out)} entries")
+    print(f"written {len(out)} entries → {OUT_FILE.name}")
 
 
 if __name__ == "__main__":

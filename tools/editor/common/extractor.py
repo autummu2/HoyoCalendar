@@ -127,7 +127,7 @@ def _extract_post_text(content: str, post: dict) -> str:
 def _cookie_header() -> str:
     """米游社登录 cookie（可选，见 fetch_post 注释）。
 
-    在调用时读取而非导入时，避免依赖 import 顺序（run_pipeline 会先从注册表预读进 os.environ）。
+    在调用时读取而非导入时，避免依赖 import 顺序（管线会先从注册表预读进 os.environ）。
     """
     return os.environ.get("MIYOUSHE_COOKIE", "")
 
@@ -219,7 +219,7 @@ def find_banner_announcements(posts: list[dict]) -> list[dict]:
 # ─── 活动公告（常规活动 / 版本大活动） ───────────────────────
 
 # 负向关键词：命中即非「常规/版本大」活动（版本更新/维护、反馈、优化、
-# 赛季、装扮上新、礼包、首充等，见 EXTRACTION_RULES.md 第五节）
+# 赛季、装扮上新、礼包、首充等，见 genshin/RULES.md 第五节）
 ACTIVITY_SKIP_KEYWORDS = [
     "首充双倍", "集中反馈", "优化说明", "版本更新", "维护预告", "更新说明",
     "版本说明", "赛季开启", "装扮上新", "冒险助力礼包", "设备性能",
@@ -254,7 +254,7 @@ def find_activity_announcements(posts: list[dict]) -> list[dict]:
         if any(kw in s for kw in CHALLENGE_KEYWORDS):
             continue
         if "七圣召唤" in s:
-            # 例外：括号内是系统名，保留完整标题（EXTRACTION_RULES.md 第二节）
+            # 例外：括号内是系统名，保留完整标题（genshin/RULES.md 第二节）
             title = s.rstrip("！!。：:")
             name = "七圣召唤"
         else:
@@ -351,7 +351,7 @@ def find_battle_pass_announcements(posts: list[dict]) -> list[dict]:
 
     纪行是每版本的大月卡，标题「XX纪行」，日期在正文（「版本更新后 ~ Y」），
     不参与常规活动提取（find_activity_announcements 已按 ACTIVITY_SKIP_KEYWORDS 排除），
-    由 run_pipeline 单独抓正文后经 resolve_version_starts 补 start。
+    由 genshin/pipeline.py 单独抓正文后经 resolve_version_starts 补 start。
     """
     out = []
     for p in posts:
@@ -419,7 +419,7 @@ def parse_activity_body(text: str) -> dict:
     特殊标记：
     - permanent=True：「永久开放」，不进日历。
     - version_period=True：「版本期间持续开放」，起止 = 整版本周期（inference.resolve_version_period 补）。
-    - 日期三况见 EXTRACTION_RULES.md；end 03:59 减一天、其余时间直接抄。
+    - 日期三况见 genshin/RULES.md；end 03:59 减一天、其余时间直接抄。
     """
     result = {"description": text.strip() or None}
     m = re.search(r"〓活动时间〓(.*?)(?=〓|$)", text, re.S)

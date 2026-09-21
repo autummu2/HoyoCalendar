@@ -10,7 +10,7 @@ import yaml
 
 
 # 项目根目录（tools/editor/ 的上两级）
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = PROJECT_ROOT / "data" / "events"
 
 # 游戏文件名映射
@@ -28,6 +28,21 @@ GAME_META = {
     "zenless-zone-zero": {"name": "绝区零", "color": "#00E5A0"},
     "tears-of-themis": {"name": "未定事件簿", "color": "#D4929A"},
     "honkai-impact-3rd": {"name": "崩坏3", "color": "#FF6B9D"},
+}
+
+# 事件 id 前缀与米游社 source_url 路径。两者都是「按游戏」的，且各模块都要用，
+# 集中在这里，避免 apply_events / yaml_io 各写一份。
+GAME_ID_PREFIX = {
+    "genshin-impact": "gi",
+    "honkai-star-rail": "hsr",
+    "zenless-zone-zero": "zzz",
+}
+
+# 米游社文章路径。只登记已核对过的两个游戏——未核对的不猜，宁可不给 source_url
+# 也不要落一个 404 的链接。
+GAME_URL_PATH = {
+    "genshin-impact": "ys",
+    "honkai-star-rail": "sr",
 }
 
 EVENT_TYPES = [
@@ -129,11 +144,7 @@ def list_games() -> list[dict]:
 
 def generate_event_id(game_id: str, title: str, start_date: str) -> str:
     """根据游戏+标题+日期自动生成事件 ID"""
-    game_prefix = {
-        "genshin-impact": "gi",
-        "honkai-star-rail": "hsr",
-        "zenless-zone-zero": "zzz",
-    }.get(game_id, game_id[:3])
+    game_prefix = GAME_ID_PREFIX.get(game_id, game_id[:3])
 
     # 从标题中取前几个有意义的中文字符
     import re

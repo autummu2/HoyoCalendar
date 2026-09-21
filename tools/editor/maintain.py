@@ -5,9 +5,9 @@
 - maintain.bat（Windows 双击 / 任务计划）
 - 编辑器 main.py 的「自动化维护」按键
 
-先 chdir 到本脚本目录（run_pipeline / apply_events 用相对路径读写 extracted_full.json），
-再依次执行 run_pipeline.run（提取 + 推理 + 校准，写 extracted_full.json）
-与 apply_events.main（把新活动写进 data/events/genshin-impact.yaml）。
+先 chdir 到本脚本目录（日志与编辑器状态文件用相对路径），再执行
+「提取 + 校准 → 落盘」：原神走 genshin.pipeline.run，产出 genshin/extracted_full.json，
+再交给 apply_events.main 落盘。
 
 全程 stdout 追加写入 logs/YYYY-MM-DD.log（UTF-8）。自动化运行无人值守，
 日志是事后核查「那天到底干了什么」的唯一依据——尤其是正文接口被风控时，
@@ -16,11 +16,12 @@
 import datetime
 import os
 import sys
+import traceback
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-import run_pipeline
-import apply_events
+from common import apply_events
+from genshin import pipeline as genshin
 
 
 class _Tee:
@@ -47,6 +48,14 @@ class _Tee:
         return self._stream.encoding
 
 
+def _genshin():
+    genshin.run()
+    apply_events.main("genshin-impact", genshin.OUT_FILE)
+
+
+GAMES = [("原神", _genshin)]
+
+
 def main():
     os.makedirs("logs", exist_ok=True)
     path = os.path.join("logs", f"{datetime.date.today():%Y-%m-%d}.log")
@@ -56,8 +65,12 @@ def main():
         real_stdout = sys.stdout
         sys.stdout = _Tee(real_stdout, log)
         try:
-            run_pipeline.run()
-            apply_events.main()
+            for name, run_game in GAMES:
+                print(f"\n--- {name} ---")
+                try:
+                    run_game()
+                except Exception:
+                    traceback.print_exc()
         finally:
             sys.stdout = real_stdout
 

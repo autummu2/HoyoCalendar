@@ -17,8 +17,9 @@ __pycache__/
 *.pyc
 tools/editor/type_pool.json
 tools/editor/list_state.json
-tools/editor/extracted_full.json
 tools/editor/post_analysis.json
+tools/editor/genshin/extracted_full.json
+tools/editor/starrail/extracted_hsr.json
 
 # Editor directories and files
 .vscode/*
