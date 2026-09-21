@@ -21,13 +21,6 @@ from common import keys  # noqa: E402
 from common import yaml_io  # noqa: E402
 from starrail import parse, pipeline, rules  # noqa: E402
 
-# 离线夹具里必然对不上现有数据的条目（真的还没落盘，不是标题规则出错）
-# 2026-09-21：虚构叙事·立界开篇、4.5版本「无名勋礼」已随本轮落盘，移出本集合——
-# 它们现在**应该**命中，命中即幂等成立；留在集合里反而会在下一轮误报。
-KNOWN_NEW = {
-    "「镇伏『贪饕』，汇聚愿力」",    # 4.6 版本大活动，终点要等 4.6 的说明
-}
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 _FAILS: list[str] = []
@@ -174,11 +167,16 @@ def test_classification():
 # ─── 交叉核对：本轮会产出的条目 vs 数据文件里的已有条目 ────
 
 def test_matches_existing():
-    """除 KNOWN_NEW 外，每条都应命中数据文件里的已有条目，且日期一致。
+    """日期齐全的每条都应命中数据文件里的已有条目，且日期一致。
 
     这是**标题规则**的回归闸门。标题是去重主键（keys.event_key），拼错一个字，
     下一轮 apply_events 就会把已落盘的条目当成新活动再插一遍——而且日期也是同一套
     日期口径推出来的，一并核对，等于把「标题 + 日期口径」两个假设都钉在真实数据上。
+
+    日期不齐的候选**不要求**命中：管线有日期闸，起止缺一就丢弃，它本就不该出现在
+    数据文件里（4.6 的「镇伏『贪饕』，汇聚愿力」就是这种，终点要等 4.6 的更新说明）。
+    判据取自管线自己的闸门，不另设例外名单——名单会过期，过期了还留着就会把
+    真正的标题规则回归盖住。
     """
     existing = yaml_io.load_events(rules.GAME)
 
@@ -196,25 +194,32 @@ def test_matches_existing():
         + pipeline._build_version_events(notes45, preview, parse.find_launches(dyn))
         + pipeline._build_livestreams(parse.find_livestreams(dyn))
     )
-    # 卡池：正文夹具只用来取标题，日期已由 test_banners 逐条断言过
+    # 卡池、大月卡、活动：标题与日期都从正文夹具解析（日期另有 test_banners /
+    # test_activity_bodies 单独断言）。日期一并带上，是为了让下面「日期齐就必须命中」
+    # 这条判据能覆盖到它们。
     for name in ("hsr45_banner_1", "hsr45_banner_2", "hsr44_banner_2"):
         for b in parse.parse_banner_body(load(name)["text"]):
             candidates.append({"title": b["title"], "type": "卡池",
                                "start_date": b["start_date"], "end_date": b["end_date"]})
-    candidates.append({"title": rules.BATTLE_PASS_TITLE.format(ver="4.5"), "type": "大月卡"})
-    # 活动：正文夹具只用来取标题（日期同样已单独断言）
+    bp = parse.parse_activity_body(load("hsr45_battle_pass")["text"])
+    candidates.append({"title": rules.BATTLE_PASS_TITLE.format(ver="4.5"), "type": "大月卡",
+                       "start_date": bp.get("start_date"), "end_date": bp.get("end_date")})
     for name, etype in (("act_chaoxian", "常规活动"), ("act_huacang", "常规活动"),
                         ("act_weimian", "常规活动"), ("act_zhenfu", "版本大活动")):
+        act = parse.parse_activity_body(load(name)["text"])
         candidates.append({"title": f"「{parse._name_of(load(name)['subject'])}」",
-                           "type": etype})
+                           "type": etype,
+                           "start_date": act.get("start_date"),
+                           "end_date": act.get("end_date")})
 
     for c in candidates:
         dup = keys.find_duplicate(c, existing)
-        if c["title"] in KNOWN_NEW:
-            check(f"已知新增不应命中：{c['title']}", dup, None)
-            continue
         if dup is None:
-            check(f"应命中已有条目：{c['title']}", None, "数据文件里的一条")
+            if c.get("start_date") and c.get("end_date"):
+                check(f"应命中已有条目：{c['title']}", None, "数据文件里的一条")
+            else:
+                # 日期不齐 → 管线日期闸会丢掉，本就不该在数据文件里
+                print(f"   · 日期不齐、暂不落盘：{c['title']}")
             continue
         for f in ("start_date", "end_date"):
             if c.get(f):
