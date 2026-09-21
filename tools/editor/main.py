@@ -97,6 +97,7 @@ def main():
             "选择操作:",
             choices=[
                 {"name": "📋 编辑活动数据", "value": "edit"},
+                {"name": "🔄 自动化维护", "value": "maintain"},
                 {"name": "🚪 退出", "value": "quit"},
             ],
         ).ask()
@@ -107,6 +108,21 @@ def main():
 
         if choice == "edit":
             _select_game()
+        elif choice == "maintain":
+            _auto_maintain()
+
+
+def _auto_maintain():
+    """一键自动化维护：提取新增活动 + 校准已有条目 + 落盘（见 maintain.py）。"""
+    import maintain
+    console.clear()
+    console.print("[cyan]开始自动化维护（提取 + 校准 + 落盘）…[/cyan]\n")
+    try:
+        maintain.main()
+        console.print("\n[green]✓ 自动化维护完成[/green]")
+    except Exception as e:
+        console.print(f"\n[red]✗ 自动化维护失败：{e}[/red]")
+    _press_enter()
 
 
 def _select_game():
@@ -303,23 +319,23 @@ def _edit_event(event: dict | None, game_id: str) -> dict | None:
             return None
         raise KeyboardInterrupt
 
-    # 构建最终数据
-    result = {
+    # 从原条目起手，只覆盖本界面管理的字段——source_url、calibrated 等
+    # 非本界面字段必须原样保留，否则编辑一次就被静默丢掉
+    result = dict(event)
+    result.update({
         "id": event_id,
         "game": game_id,
         "title": title,
         "type": event_type,
         "start_date": start_date,
         "end_date": end_date,
-    }
-    if desc:
-        result["description"] = desc
-    if color:
-        result["color"] = color
-    if tags:
-        result["tags"] = tags
-    if phases:
-        result["phases"] = phases
+    })
+    for field, value in (("description", desc), ("color", color),
+                         ("tags", tags), ("phases", phases)):
+        if value:
+            result[field] = value
+        else:
+            result.pop(field, None)
 
     return result
 
