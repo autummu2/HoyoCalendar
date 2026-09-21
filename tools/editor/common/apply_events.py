@@ -1,11 +1,13 @@
 """新增落盘：把管线产出的 JSON 里的新活动写入 data/events/<game_id>.yaml。
 
-本模块**只新增，不改动已有条目**——已有条目的日期修正由 calibrate.py 负责。
-「是否已存在」按 keys.event_key 判定（身份，与日期无关），所以日期被校准改动过
-的条目仍能被认出，不会重复插入。
+本模块**只新增，不改动已有条目**——已有条目的值修正由 calibrate.py 负责。
+「是否已存在」按 keys.find_duplicate 判定（主键 + 同名/同类型 7 天日期兜底）。
+活动类的主键是 (标题, 开始日期)，**类型不在主键里**——所以「先按默认类型落盘、等公告
+到了再订正类型」不会插重复（类型变了主键不变）。把类型改对是 calibrate.correct_from_candidates
+的事（在管线里跑，本模块不参与）。
 
-- 新增：主键不在现有数据里的活动。
-- 跳过：主键已存在（日期可能已被 calibrate.py 校准过，主键仍认得出）。
+- 新增：find_duplicate 找不到同身份条目。
+- 跳过：找到了（日期可能已被人工订正过，靠 7 天兜底仍认得出）。
 
 两条管线共用：由调用方传入各自的产物路径（原神 genshin/extracted_full.json、
 星铁 starrail/extracted_hsr.json）。
@@ -74,6 +76,10 @@ def main(game_id: str = GAME, filename=None):
             ev["source_url"] = f"https://www.miyoushe.com/{url_path}/article/{ex['post_id']}"
         if ex.get("tags"):
             ev["tags"] = ex["tags"]
+        if ex.get(keys.PENDING_FIELD):
+            # 「这条是从总纲落盘的、还缺公告才有的字段」，要写进数据文件——下一轮
+            # 靠它决定必抓正文（keys.likely_recorded）与补全（calibrate.correct_from_candidates）
+            ev[keys.PENDING_FIELD] = ex[keys.PENDING_FIELD]
         events.append(ev)
         added.append(f"{title} {start}~{ex['end_date']} [{ex.get('color')}]")
 

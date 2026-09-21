@@ -65,23 +65,23 @@ def _count_fetch(fp):
         FETCH_STATS["risk"] += 1
 
 
-def _needs_body(event, existing, alt_types=()):
+def _needs_body(event, existing):
     """该条目是否还需要抓正文。理由同 genshin/pipeline.py 的 _needs_body：正文只用于取日期/
     描述/配图，都是**新增**才需要的；已落盘的条目不必再抓，稳态请求数由此大降，
     而请求数正是米游社风控的主因。判定复用同一套 keys.find_duplicate，因此不会比
     apply_events 的去重更激进。
 
-    alt_types：候选类型。活动条目的类型要到正文里才知道（「X.Y版本期间」→ 版本大活动），
-    预筛时先把两种可能都试一遍，否则已落盘的版本大活动每轮都会被多抓一次。
+    活动条目的类型要到正文里才知道（「X.Y版本期间」→ 版本大活动），而主键里已经没有
+    类型，所以不需要再逐个候选类型试——keys.likely_recorded 按标题认，一道闸就够。
 
     命中的条目打 `_body_skipped` 标记：它仍留在列表里参与校准（剪掉会丢校准依据），
     但没日期是正常的，日志不把它报成日期缺口。
     """
-    for t in (event.get("type"),) + tuple(alt_types):
-        if keys.find_duplicate({**event, "type": t}, existing) is not None:
-            event["_body_skipped"] = True
-            FETCH_STATS["skip"] += 1
-            return False
+    if keys.find_duplicate(event, existing) is not None \
+            or keys.likely_recorded(event, existing):
+        event["_body_skipped"] = True
+        FETCH_STATS["skip"] += 1
+        return False
     return True
 
 
@@ -231,8 +231,7 @@ def _build_activities(posts, notes, existing) -> list[dict]:
     """常规活动 / 版本大活动。标题统一为「活动名」（最外层「」）。"""
     out = []
     for a in parse.find_activities(posts):
-        a["type"] = "常规活动"
-        if not _needs_body(a, existing, alt_types=("版本大活动",)):
+        if not _needs_body(a, existing):
             continue
         text, images = _fetch_text(a["post_id"])
         if text is None:
@@ -335,22 +334,33 @@ def run():
     lives = parse.find_livestreams(dyn)
     launches = parse.find_launches(dyn)
 
+    acts = _build_activities(posts, notes, events)
     all_events = (
         _build_version_events(notes, preview, launches)
         + _build_livestreams(lives)
         + _build_endgame_events(notes)
-        + _build_activities(posts, notes, events)
+        + acts
         + _build_banners(posts)
         + _build_battle_passes(posts, events)
     )
 
+    # 订正：类型可能后到——正文里没有「X.Y版本期间」时先落成常规活动，等版本的说明发了
+    # 才知道是版本大活动。只可能往版本大活动方向订正，反向被 DEFAULT_ACTIVITY_TYPE 护栏挡住。
+    # 必须在校准之前：版本大活动的主键含类型，类型改对了校准才查得到来源。
+    fixes = calibrate.correct_from_candidates(events, acts)
+
     # 校准：用权威来源核对已有条目（只改值 + 打 calibrated 标记，不新增）
     filled, changes = calibrate.calibrate(events, _build_sources(notes, preview, lives))
-    if changes:
+    if fixes or changes:
         yaml_io.save_events(GAME, filled)
-        print("== 校准 ==")
-        for c in changes:
-            print(" ~", c)
+        if fixes:
+            print("== 订正 ==")
+            for c in fixes:
+                print(" ~", c)
+        if changes:
+            print("== 校准 ==")
+            for c in changes:
+                print(" ~", c)
 
     print(f"== 正文抓取 == 成功 {FETCH_STATS['ok']} / 失败 {FETCH_STATS['fail']}"
           + (f"（其中风控 1034: {FETCH_STATS['risk']}）" if FETCH_STATS["risk"] else "")

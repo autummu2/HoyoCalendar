@@ -137,21 +137,36 @@ def fetch_dynamics(uid: int = GENSHIN_UID, limit: int = 20, retries: int = 3) ->
     return items[:limit]
 
 
-def _resolve_year(month: int, day: int, pub_ts) -> str:
+def _resolve_year(month: int, day: int, pub_ts) -> str | None:
     """把「X月X日」补全年份。前瞻预告发布在前瞻当天之前，故日期晚于发布日时用同年，
-    早于发布日（跨年）时用次年。"""
+    早于发布日（跨年）时用次年。
+
+    pub_ts 本应是秒级时间戳，但 fetch_dynamics 在它缺失时会退回**字符串** pub_time，
+    两者都可能不可解析。此时退回今年、不做跨年判断（略差一点，但不会再抛异常）。
+
+    pub_date 必须先绑定成 None：下面的比较要读它，而「变量未绑定」抛的是 NameError，
+    不是 ValueError——原来那个 except 捕不住，会一路冒到 pipeline，被 maintain.py 的
+    每游戏 try 接住后**该游戏当轮整个作废**（一条都不落盘）。
+
+    月日与年份凑不出合法日期时返回 None，由调用方当「这条没日期」处理：正则误匹配出的
+    「13月45日」、或两个候选年份都不是闰年的「2月29日」。拼非法串出去更糟——前端 Zod
+    会把**整份**数据文件拒收。
+    """
+    pub_date = None
     try:
         pub_date = datetime.datetime.fromtimestamp(int(pub_ts)).date()
-        year = pub_date.year
     except (TypeError, ValueError, OSError):
-        year = datetime.date.today().year
-    # 若目标日期早于发布日，说明跨年
-    try:
-        if datetime.date(year, month, day) < pub_date:
-            year += 1
-    except ValueError:
         pass
-    return f"{year:04d}-{month:02d}-{day:02d}"
+    year = pub_date.year if pub_date else datetime.date.today().year
+    # 同年解析出的日子若早于发布日，只能是跨年，顺延一年；两年都凑不出合法日期就放弃
+    for y in (year, year + 1):
+        try:
+            d = datetime.date(y, month, day)
+        except ValueError:
+            continue
+        if not pub_date or d >= pub_date:
+            return f"{y:04d}-{month:02d}-{day:02d}"
+    return None
 
 
 def parse_livestream(text: str, pub_ts=None) -> dict | None:
@@ -174,11 +189,12 @@ def parse_livestream(text: str, pub_ts=None) -> dict | None:
     m = re.search(r"[「『]([^」』]{2,40})[」』]", text)
     if m:
         result["name"] = m[1]
-    # 前瞻日期：X月X日
+    # 前瞻日期：X月X日（月日非法时不落 date 键，当「这条没日期」处理）
     m = re.search(r"(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
     if m:
-        month, day = int(m[1]), int(m[2])
-        result["date"] = _resolve_year(month, day, pub_ts)
+        d = _resolve_year(int(m[1]), int(m[2]), pub_ts)
+        if d:
+            result["date"] = d
     return result
 
 

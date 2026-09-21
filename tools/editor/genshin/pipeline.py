@@ -109,17 +109,21 @@ def _needs_body(event, existing):
 
     正文只用来取日期 / 描述 / 配图，都是「新增」才需要的东西；已落盘的条目不必再抓。
     稳态下一次运行由此省掉绝大部分正文请求——请求数正是米游社风控的主因。
-    判定复用 apply_events 的同名去重（keys.find_duplicate），因此不会比现有去重更激进：
-    这里跳过的，apply 本来也会跳过。
+    判定用 keys.find_duplicate（与 apply_events 同一套去重）；活动公告在预筛时还没有类型
+    （要等 B站动态合并后才定），主键对不上，所以另加 keys.likely_recorded 按标题 + 发布日认。
+    它覆盖的类型是 ANNOUNCEMENT_ACTIVITY_TYPES（含版本大活动）——改动前这里给候选预填
+    「常规活动」凑主键，版本大活动因此**每轮都被多抓一次**（实测「险境征者竞锋大赛」，
+    已有条目是版本大活动，候选键却是常规活动 → 对不上 → 反复抓正文）。
 
     命中的条目打 `_body_skipped` 标记：它仍留在列表里参与 B站合并与校准（否则会丢掉
     校准的权威来源，见 _build_sources），但没日期是正常的，日志不再把它报成日期缺口。
     """
-    if keys.find_duplicate(event, existing) is None:
-        return True
-    event["_body_skipped"] = True
-    FETCH_STATS["skip"] += 1
-    return False
+    if keys.find_duplicate(event, existing) is not None \
+            or keys.likely_recorded(event, existing):
+        event["_body_skipped"] = True
+        FETCH_STATS["skip"] += 1
+        return False
+    return True
 
 
 def run():
@@ -134,12 +138,6 @@ def run():
 
     # 已落盘条目提前载入，供 _needs_body 判断哪些条目无需再抓正文
     events = yaml_io.load_events(GAME)
-
-    # entries 不带 type（类型要到 B站动态合并后才定：默认常规活动、多阶段信号→版本大活动），
-    # 而预筛要类型才能对上键。先按默认值填——与 merge_activities 的默认一致；
-    # 已有的版本大活动因此对不上、仍会多抓一次正文（每版本 1~2 条，可接受）。
-    for e in entries:
-        e.setdefault("type", "常规活动")
 
     # 抓正文 + 封面图
     for e in entries:
@@ -228,15 +226,24 @@ def run():
     anchor = inference.extract_version_anchor(events)
     events, inferred_added = _merge_inferred(events, inference.infer_events(today, anchor))
 
+    # 订正：活动公告先在预筛时落成默认类型，B站动态到了才知道是版本大活动（候选只有
+    # merged 需要——卡池/高难/大月卡的类型是确定的，没有可订正的余地）。必须在校准之前：
+    # 版本大活动的主键含类型，类型改对了校准才查得到 B站活动动态给的日期。
+    fixes = calibrate.correct_from_candidates(events, merged)
+
     # 校准：用 B站动态 / 米游社维护预告的权威值核对已有条目（只改值 + 打 calibrated 标记，不新增）
     sources = _build_sources(merged, banners, dyn, posts)
     filled, changes = calibrate.calibrate(events, sources)
-    if inferred_added or changes:
+    if inferred_added or fixes or changes:
         yaml_io.save_events(GAME, filled)
         if inferred_added:
             print("== 推理新增 ==")
             for a in inferred_added:
                 print(" +", a["title"], a["start_date"], "~", a["end_date"])
+        if fixes:
+            print("== 订正 ==")
+            for c in fixes:
+                print(" ~", c)
         if changes:
             print("== 校准 ==")
             for c in changes:
