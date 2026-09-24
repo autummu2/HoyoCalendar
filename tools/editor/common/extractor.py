@@ -219,10 +219,14 @@ def find_banner_announcements(posts: list[dict]) -> list[dict]:
 # ─── 活动公告（常规活动 / 版本大活动） ───────────────────────
 
 # 负向关键词：命中即非「常规/版本大」活动（版本更新/维护、反馈、优化、
-# 赛季、装扮上新、礼包、首充等，见 genshin/RULES.md 第五节）
+# 赛季、装扮上新、礼包、首充等，见 genshin/RULES.md §2.1）
 ACTIVITY_SKIP_KEYWORDS = [
     "首充双倍", "集中反馈", "优化说明", "版本更新", "维护预告", "更新说明",
-    "版本说明", "赛季开启", "装扮上新", "冒险助力礼包", "设备性能",
+    # 装扮上架 / 装扮上新：千星奇域的装扮颂愿池（时段挂在「〓活动颂愿-N介绍〓」下，
+    # parse_activity_body 不识别该段名，落不了日期）。2026-09-24 实测两篇姊妹篇只差一个字：
+    # 「奇域秘藏·暄霁霄练」奇偶装扮**上新**（已在名单里）与「奇域秘藏·幻夜游烛」奇偶装扮
+    # **上架**（漏网，于是每轮白抓一次正文）。
+    "版本说明", "赛季开启", "装扮上新", "装扮上架", "冒险助力礼包", "设备性能",
     "云·原神", "游戏问题", "更新修复", "更新维护",
     "纪行",  # 大月卡（纪行），非常规活动，另由 find_battle_pass_announcements 单独提取
     # 世界任务说明：正文用「〓任务开放时间〓」，parse_activity_body 不识别该段，
@@ -254,7 +258,7 @@ def find_activity_announcements(posts: list[dict]) -> list[dict]:
         if any(kw in s for kw in CHALLENGE_KEYWORDS):
             continue
         if "七圣召唤" in s:
-            # 例外：括号内是系统名，保留完整标题（genshin/RULES.md 第二节）
+            # 例外：括号内是系统名，保留完整标题（genshin/RULES.md §4.2）
             title = s.rstrip("！!。：:")
             name = "七圣召唤"
         else:

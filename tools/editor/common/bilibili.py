@@ -22,6 +22,8 @@ import datetime
 
 import requests
 
+from common import keys
+
 # 原神官方 B站账号 uid
 GENSHIN_UID = 401742377
 
@@ -353,23 +355,31 @@ def parse_activity_time(text: str) -> dict | None:
 
     常规活动（单段）: 2026/09/14 04:00 ~ 2026/09/21 03:59
     版本大活动（多阶段）: 第一阶段：… / 第二阶段：… / 结束时间：2026/09/14 03:59
-    start = 第一个日期（白天整点，直接抄）；end = 最后一个日期（活动均 03:59 结束，减一天）。
+    起点用版本代称: 7.1版本更新后~2026/11/04 5:59 → start=None（交给
+    inference.resolve_version_starts 按发布日补版本更新日）。**只有一个日期时，
+    它不能同时当起止**——2026-09-24 实测这条被记成 11-04 ~ 11-03（起 > 止）。
+    start = 第一个日期（白天整点，直接抄）；end = 最后一个日期，**只有时刻是 03:59
+    才减一天**，其余照抄——14:59 / 17:59 / 5:59 的结束日就是当天（与米游社侧
+    extractor._parse_time_segment、genshin/RULES.md §4.1 同一口径）。旧实现不看时刻
+    一律减一天，把 `~ 2026/11/03 14:59` 记成了 11-02。
     multi_stage = 段内出现「阶段/结束时间」→ 版本大活动信号（竞锋大赛即分多个阶段）。
     """
     m = re.search(r"〓活动时间〓(.*?)(?=〓|$)", text, re.S)
     if not m:
         return None
     seg = m.group(1)
-    dates = re.findall(r"(\d{4})/(\d{1,2})/(\d{1,2})", seg)
+    # 时刻和日期一起取：结束时刻决定要不要减一天（无时刻的组匹配成空串）
+    dates = re.findall(r"(\d{4})/(\d{1,2})/(\d{1,2})(?:\s*(\d{1,2}):(\d{2}))?", seg)
     if not dates:
         return None
-    y, mo, d = dates[0]
-    start = f"{int(y):04d}-{int(mo):02d}-{int(d):02d}"
-    y, mo, d = dates[-1]
+    y, mo, d, _, _ = dates[0]
+    start = f"{int(y):04d}-{int(mo):02d}-{int(d):02d}" if len(dates) > 1 else None
+    y, mo, d, hh, mm = dates[-1]
     end_date = datetime.date(int(y), int(mo), int(d))
-    end = (end_date - datetime.timedelta(days=1)).isoformat()
+    if not hh or f"{int(hh):02d}:{mm}" == "03:59":
+        end_date -= datetime.timedelta(days=1)
     multi_stage = bool(re.search(r"阶段|结束时间", seg))
-    return {"start_date": start, "end_date": end, "multi_stage": multi_stage}
+    return {"start_date": start, "end_date": end_date.isoformat(), "multi_stage": multi_stage}
 
 
 def find_activity_dynamics(items: list[dict]) -> list[dict]:
@@ -406,6 +416,9 @@ def merge_activities(entries: list[dict], dynamics: list[dict]) -> list[dict]:
     dynamics：find_activity_dynamics 输出（含 name/start_date/end_date/multi_stage）
     类型：默认「常规活动」；B站动态多阶段（阶段/结束时间）→「版本大活动」+「待确认」标签。
     日期：B站动态优先（权威，全阶段起止）；无动态时保留米游社正文推断值。
+
+    标签取自 keys.TAG_PENDING_TYPE（不是就地写字面量）：它由 calibrate 在校准到权威来源时
+    摘掉，两边必须是同一个字符串——就地写死过一次，结果没人摘，成了永久徽章。
     """
     by_name: dict[str, dict] = {}
     for d in dynamics:
@@ -418,8 +431,8 @@ def merge_activities(entries: list[dict], dynamics: list[dict]) -> list[dict]:
         if d and d.get("multi_stage"):
             new["type"] = "版本大活动"
             tags = new.get("tags") or []
-            if "待确认" not in tags:
-                tags.append("待确认")
+            if keys.TAG_PENDING_TYPE not in tags:
+                tags.append(keys.TAG_PENDING_TYPE)
             new["tags"] = tags
         else:
             new["type"] = "常规活动"
