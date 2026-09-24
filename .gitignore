@@ -21,6 +21,8 @@ tools/editor/post_analysis.json
 tools/editor/genshin/extracted_full.json
 tools/editor/starrail/extracted_hsr.json
 tools/editor/zenless/extracted_zzz.json
+# 公告正文缓存（省请求用，可随时删；见 tools/editor/common/body_cache.py）
+tools/editor/.cache/
 
 # Editor directories and files
 .vscode/*

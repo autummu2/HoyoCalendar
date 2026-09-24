@@ -14,7 +14,7 @@
 B站日期来源（B站活动动态只覆盖多阶段的版本大活动），后者无公告、本就走推理。
 
 另一个入口是 `correct_from_candidates()`：用本轮候选订正已有条目的**类型**，并补全
-「先从总纲落盘、还缺公告才有的字段」的活动（绝区零的总纲优先，见 `zenless/PLAN.md` §9）。
+「先从总纲落盘、还缺公告才有的字段」的活动（绝区零的总纲优先，见 `zenless/PLAN.md` §1.2）。
 它同样只改值、不新增、不碰 id 与日期，但匹配方式不一样——按**标题**认而不是按主键，
 因为要订正的恰恰包含类型本身，而类型在候选侧可能已经和条目不同。所以它做成独立函数，
 不塞进 VALUE_FIELDS。
@@ -22,6 +22,7 @@ B站日期来源（B站活动动态只覆盖多阶段的版本大活动），后
 标记字段 `calibrated`（值为上表的来源名）：
 - 有标记 = 已确认，不再重复处理（一次性）。
 - 本轮找不到依据就不打标记，下次运行再试——避免「假确认」。
+- 顺带摘掉 `keys.PENDING_TAGS` 里的「待确认」标签：确认到了，标签就该消失。
 - EventSchema 不是 .strict()，前端 Zod 会静默丢弃该字段，界面无感。
 
 只处理 start_date 在最近 WINDOW_DAYS 天内的未标记条目：更久远的即便有错也已无意义，
@@ -38,7 +39,6 @@ from common import keys
 
 MARKER = "calibrated"
 WINDOW_DAYS = 30
-TAG_PENDING_VERSION = "待确认版本"
 
 # 纳入校准的类型（见模块说明）。
 # 高难挑战是给星铁加的：星铁的高难期名与日期都写在版本更新说明里（权威来源），
@@ -137,7 +137,9 @@ def calibrate(events: list[dict], sources: dict, today: datetime.date | None = N
             if want and new.get(field) != want:
                 diffs.append(f"{field} {new.get(field)} → {want}")
                 new[field] = want
-        tags = [t for t in (new.get("tags") or []) if t != TAG_PENDING_VERSION]
+        # 确认了就把「待确认」摘掉（见 keys.PENDING_TAGS）。放在这里而不是产出侧：标签的
+        # 含义是「等确认」，只有拿到权威来源的这一刻才算确认；产出侧摘掉等于没标过。
+        tags = [t for t in (new.get("tags") or []) if t not in keys.PENDING_TAGS]
         if tags:
             new["tags"] = tags
         else:
@@ -164,6 +166,10 @@ def correct_from_candidates(events: list[dict], candidates: list[dict]) -> list[
     2. **补全待补全的条目**（带 `keys.PENDING_FIELD` 标记的，即从总纲落盘的那批）：
        补 `description` 与 `color`（总纲只有一两行简介、且活动段没有配图，这两样只有
        公告才有），然后清掉标记。标记是幂等的开关：清掉后不再重复处理。
+
+       ⚠️ 候选的 `color` 是**管线取色那一步**才填上的，所以调用方必须**先取色再调本函数**
+       （取色要排在日期闸之后，免得给马上要丢掉的条目白下载封面图）。顺序错了不会报错，
+       只会静默少补一个配色——总纲落盘的那条会一直停在兜底色。
 
        清标记的前提是**候选本身不缺东西**——带标记的候选（总纲列出的那批，`pending` 值
        就是它落的）一律跳过：总纲那条只有名字与日期，拿它补全只会白清标记、补不上字段，

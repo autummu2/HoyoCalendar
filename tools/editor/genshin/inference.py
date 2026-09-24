@@ -37,7 +37,10 @@ COLOR_VERSION = "#ffffff"     # 版本更新
 COLOR_LIVESTREAM = "#7dc4ea"  # 前瞻直播
 
 TAG_INFER = "自动推理"
-TAG_PENDING_VERSION = "待确认版本"  # 版本号与版本名均为预测/占位，待公告后回填
+# 版本号与版本名均为预测/占位，待公告后回填。值只在 common/keys.py 定义一处：
+# 它由 calibrate 在校准到权威来源时摘掉，产出侧与清除侧必须是同一个字符串
+# （原神的 `待确认` 曾经就是因为各写一份字面量而永远摘不掉）。
+TAG_PENDING_VERSION = keys.TAG_PENDING_VERSION
 
 
 def _iso(d: datetime.date) -> str:

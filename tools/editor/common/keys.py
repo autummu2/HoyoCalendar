@@ -69,6 +69,13 @@ ACTIVITY_TYPES = ANNOUNCEMENT_ACTIVITY_TYPES - {"版本大活动"}
 # = 那几样永远补不上。所以它是 likely_recorded 的一票否决。
 PENDING_FIELD = "pending"
 
+# 「待确认」标签：条目已落盘，但某个字段还没有权威来源确认，确认后由 `calibrate` 摘掉。
+# 定义放这里、产出侧与清除侧都引用这里——2026-09-21 之前各写一份字面量，产出侧写的是
+# `待确认`，清除侧只认 `待确认版本`，于是原神的标签永远摘不掉，成了永久徽章。
+TAG_PENDING_VERSION = "待确认版本"   # 版本号 / 版本名为预测或占位（原神、星铁）
+TAG_PENDING_TYPE = "待确认"          # 类型（版本大活动）由 B站多阶段动态判定（原神）
+PENDING_TAGS = (TAG_PENDING_VERSION, TAG_PENDING_TYPE)
+
 # 版本号预测错、或活动日期被人工订正时，同类型（活动类则同名）日期相差不超过这个
 # 天数视为同一事件
 DATE_TOLERANCE_DAYS = 7

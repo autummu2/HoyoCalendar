@@ -13,7 +13,7 @@
 活动**类型**取不到总纲里：实测两份总纲都没有「活动常驻说明」/「丽都纪事」段，
 也没有活动入口链接。所以总纲列出的活动先按默认类型落盘（`keys.PENDING_FIELD` 标记），
 等它自己的活动说明公告到了再由 calibrate.correct_from_candidates 把类型/描述/配色补齐
-——活动因此能在版本更新当天进日历，比它自己的公告早 12~35 天（见 PLAN.md §9）。
+——活动因此能在版本更新当天进日历，比它自己的公告早 12~35 天（见 PLAN.md §1.2）。
 标题一律取自公告自己的 subject，总纲那条走 _demote_quotes 把内层「」降级成『』。
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ try:
 except OSError:
     pass
 
-from common import bilibili, calibrate, keys, yaml_io
+from common import bilibili, body_cache, calibrate, keys, yaml_io
 from common.colors import pastel_from_url
 from common.extractor import fetch_post, fetch_post_list
 from zenless import inference, parse, rules
@@ -51,13 +51,20 @@ FALLBACK_COLOR = rules.FALLBACK_COLOR
 # 产物写在自己目录下，与运行时的 cwd 无关
 OUT_FILE = Path(__file__).resolve().parent / "extracted_zzz.json"
 
+# 交给 apply_events 的字段白名单。`keys.PENDING_FIELD` **必须**在里面：apply_events 靠它把
+# 「这条还缺公告才有的字段」写进数据文件，下一轮才据此必抓它的公告正文（keys.likely_recorded）
+# 并由 correct_from_candidates 补齐。漏掉它，总纲优先整条路就是空转——活动照落盘，
+# 但标记带不出去，描述与配色永远补不上（离线跑一遍 run() 才发现，已写进自检）。
+OUT_FIELDS = ("title", "type", "start_date", "end_date", "tags", "color",
+              "description", "post_id", keys.PENDING_FIELD)
+
 
 # ─── 抓取记账 ────────────────────────────────────────────
 
 # 正文抓取成败计数。无人值守运行后人工核查用：风控（retcode 1034）会让正文大面积
 # 抓不到，条目因拿不到日期被日期闸丢弃，表现为「本轮 0 新增」，容易被误当成
 # 「今天没有新活动」。日志里的这一行是分辨两者的第一依据。
-FETCH_STATS = {"ok": 0, "fail": 0, "risk": 0, "skip": 0}
+FETCH_STATS = {"ok": 0, "fail": 0, "risk": 0, "skip": 0, "cache": 0}
 
 
 def _count_fetch(fp):
@@ -92,12 +99,23 @@ def _fetch(post_id):
     """抓一条公告，返回 (text, images, content)；失败返回 (None, [], "")。
 
     网页活动的判据要看正文里的**原始外链**，所以 content 也一并返回。
+
+    本机缓存里有未过期的正文就直接用（见 common/body_cache）——这三样都是公告发布后
+    就不变的内容，而请求数正是米游社风控的主因。
     """
+    hit = body_cache.get(post_id)
+    if hit is not None:
+        FETCH_STATS["cache"] += 1
+        return (hit.get("text") or "", hit.get("images") or [],
+                hit.get("content") or "")
     fp = fetch_post(post_id, GAME)
     _count_fetch(fp)
     if not fp or "error" in fp:
         return None, [], ""
-    return fp.get("text") or "", fp.get("images") or [], fp.get("content") or ""
+    text, images, content = (fp.get("text") or "", fp.get("images") or [],
+                             fp.get("content") or "")
+    body_cache.put(post_id, text=text, images=images, content=content)
+    return text, images, content
 
 
 # ─── 版本 ────────────────────────────────────────────────
@@ -284,7 +302,7 @@ def _build_sources(lives, notes) -> dict:
 
 def run():
     # 同一进程内可能多次调用（编辑器「自动化维护」可重复按），计数必须每轮归零
-    FETCH_STATS.update(ok=0, fail=0, risk=0, skip=0)
+    FETCH_STATS.update(ok=0, fail=0, risk=0, skip=0, cache=0)
 
     events = yaml_io.load_events(GAME)
     posts = fetch_post_list(GAME, page_size=rules.PAGE_SIZE)
@@ -322,6 +340,28 @@ def run():
         + _build_battle_passes(posts, versions, events)
     )
 
+    print(f"== 正文抓取 == 成功 {FETCH_STATS['ok']} / 失败 {FETCH_STATS['fail']}"
+          + (f"（其中风控 1034: {FETCH_STATS['risk']}）" if FETCH_STATS["risk"] else "")
+          + f" / 缓存命中 {FETCH_STATS['cache']} / 跳过正文 {FETCH_STATS['skip']}（已存在）")
+
+    # 日期缺口的最后一道闸：缺日期的条目不进输出，apply_events 那边也会再挡一次
+    dropped = [e for e in all_events if not (e.get("start_date") and e.get("end_date"))]
+    reported = [e for e in dropped if not e.get("_body_skipped")]
+    if reported:
+        print("== 跳过（日期不完整）==")
+        for e in reported:
+            print(" x", e.get("title"), e.get("start_date") or "?", "~", e.get("end_date") or "?")
+    all_events = [e for e in all_events if e.get("start_date") and e.get("end_date")]
+
+    # 取色：高难/版本更新/前瞻/版本大活动/大月卡用固定色，其余按封面图取浅色。
+    # 必须排在订正之前——订正要补的「配色」正是这里的产物；也必须排在日期闸之后
+    # （否则会给马上要丢掉的条目白下载一次封面图）。
+    for e in all_events:
+        if e.get("color"):
+            continue
+        imgs = e.get("images") or []
+        e["color"] = pastel_from_url(imgs[0]) if imgs else FALLBACK_COLOR
+
     # 订正：用本轮候选改已有条目的**类型**，并补全总纲落盘那批缺的描述与配色。
     # 必须在校准之前——两者都会写 events，校准读的是订正后的结果（同一轮内可见）。
     fixes = calibrate.correct_from_candidates(events, acts)
@@ -339,29 +379,7 @@ def run():
             for c in changes:
                 print(" ~", c)
 
-    print(f"== 正文抓取 == 成功 {FETCH_STATS['ok']} / 失败 {FETCH_STATS['fail']}"
-          + (f"（其中风控 1034: {FETCH_STATS['risk']}）" if FETCH_STATS["risk"] else "")
-          + f" / 跳过正文 {FETCH_STATS['skip']}（已存在）")
-
-    # 日期缺口的最后一道闸：缺日期的条目不进输出，apply_events 那边也会再挡一次
-    dropped = [e for e in all_events if not (e.get("start_date") and e.get("end_date"))]
-    reported = [e for e in dropped if not e.get("_body_skipped")]
-    if reported:
-        print("== 跳过（日期不完整）==")
-        for e in reported:
-            print(" x", e.get("title"), e.get("start_date") or "?", "~", e.get("end_date") or "?")
-    all_events = [e for e in all_events if e.get("start_date") and e.get("end_date")]
-
-    # 取色：高难/版本更新/前瞻/版本大活动/大月卡用固定色，其余按封面图取浅色
-    for e in all_events:
-        if e.get("color"):
-            continue
-        imgs = e.get("images") or []
-        e["color"] = pastel_from_url(imgs[0]) if imgs else FALLBACK_COLOR
-
-    out = [{k: e[k] for k in ("title", "type", "start_date", "end_date", "tags",
-                              "color", "description", "post_id") if k in e}
-           for e in all_events]
+    out = [{k: e[k] for k in OUT_FIELDS if k in e} for e in all_events]
     with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     print(f"written {len(out)} entries → {OUT_FILE}")

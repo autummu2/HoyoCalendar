@@ -146,11 +146,114 @@ def parse_version_notes(text: str, subject: str) -> dict | None:
 
 
 def find_version_notes(posts: list[dict]) -> list[dict]:
-    """从公告列表里筛版本更新说明（取最新一条）。"""
-    for p in posts:
-        if is_version_notes(p.get("subject", "")):
-            return [p]
-    return []
+    """从公告列表里筛**窗口内全部**版本更新说明（列表按时间倒序，第一条即当前版本）。
+
+    返回全部而不是只取最新，是为了让调用方在最新那份抓不到时能往后顺延；但
+    `pipeline._collect_notes` **只读第一条**——旧版本的说明不再读（原先读它们只为填版本
+    周期表，而那张表现在由已落盘的版本更新条目推，见 `pipeline._version_table`）。
+    """
+    return [p for p in posts if is_version_notes(p.get("subject", ""))]
+
+
+# ─── 总纲的活动段（`X、全新活动`）─────────────────────────
+
+# 编号段标题（`3、全新光锥` / `6、全新活动` / `7、其他内容`…）。段号每版不同，所以只用来
+# 定界，**不写死段号**——按段名后缀定位，段名变了这里也要跟着改。
+RE_NUMBERED_SECTION = re.compile(r"\d+、\S+")
+ACTIVITY_SECTION = "全新活动"
+
+# 「N.N版本更新后」是版本开服日的代称（总纲自己给了那一版的开始日期）
+RE_VERSION_START = re.compile(r"(\d+\.\d+)\s*版本更新后")
+
+# 一条活动的段落里，名字后面跟着的东西（段内压平成了一行，名字与描述之间只有空格）
+RE_ITEM_BREAK = re.compile(r"[ ●※]")
+
+# 同一段里描述之后的字段：`●` 是条目自己的字段（参与条件等），`※` 是备注。
+# 空格不算——描述本身含空格，用 RE_ITEM_BREAK 那种切法会把描述切碎。
+RE_ITEM_NOTE = re.compile(r"[●※]")
+
+
+def _demote_quotes(name: str) -> str:
+    """活动名 → 公告 subject 里的写法：内层「」降级成『』（与 zenless.parse 同一条规则）。
+
+    总纲写 `■反贪「砖」家`，活动自己的公告标题是 `「反贪『砖』家」活动说明`。数据文件用的是
+    后一种，所以这里必须转——否则同一条活动在总纲与公告下有两个名字，去重主键
+    （keys.event_key）失配，总纲落盘的那条会被当成另一条活动，而 apply_events 只认主键
+    → 插一条重复。
+    """
+    return name.replace("「", "『").replace("」", "』")
+
+
+def _item_period(chunk: str, versions: dict) -> tuple[str | None, str | None]:
+    """一条活动段落里的 `活动时间：…` → (start, end)；解不出起止返回 (None, None)。"""
+    m = re.search(r"活动时间：(.*?)(?=\s+(?:[●※]|参与条件)|$)", chunk)
+    if not m:
+        return None, None
+    seg = m.group(1)
+    vm = RE_VERSION_START.search(seg)
+    if vm:
+        start = (versions.get(vm.group(1)) or (None, None))[0]
+        if not start:
+            # 那一版的开服日未知（它的说明不在窗口内）→ 不猜。写死或就近取一个值会让整条
+            # 起止错位，宁可让这条活动等它自己的公告。
+            return None, None
+        seg = seg[:vm.start()] + start.replace("-", "/") + seg[vm.end():]
+    # 只解得出一个日期的（`2026/07/24 12:00 - 4.6版本结束前`）判为不齐：parse_period 会把
+    # 那个日期同时当成起止，于是落一条只有一天的活动。同样宁可等，不要错。
+    if len(RE_DATE.findall(seg)) < 2:
+        return None, None
+    return parse_period(seg)
+
+
+def parse_version_activities(text: str, versions: dict,
+                             version: str | None = None) -> list[dict]:
+    """总纲 `X、全新活动` 段列出的活动 → [{name, title, start_date, end_date, ...}]。
+
+    总纲按版本逐个列出本版活动（名字 + `活动时间：`），但给不出**类型**，也没有配图与
+    正文描述——那三样只有活动自己的公告才有。所以这一段的用处是**提前**：实测比活动
+    自己的公告早 15 天（4.5 总纲 08-26 发布，「方寸大冒险」的公告 09-10 才发），活动因此
+    能在版本更新当天就挂上日历（类型/描述/配色随后订正，见 pipeline.py 与 PLAN.md §1.2）。
+
+    段在下一个编号段（`7、其他内容`）处结束；段内按 `■` 切条，条目名取到首个 `●`/`※`/空格。
+
+    versions：{版本号: (起, 止)}，用来解析「N.N版本更新后」。
+    version：这份总纲自己的版本号，用来给**没有 `活动时间：`** 的登录福利条目取时段。
+
+    实测每版总纲的登录福利条目（「巡星之礼」）都不写 `活动时间：`，只写「活动期间，
+    每日登录…」，而它从来没有自己的公告——不在这里收，它就永远进不了日历。它的时段
+    按**版本期间**算（起止就是本版总纲给出的相邻更新日，不是外推），类型判为登录福利；
+    描述取条目本文，不需要正文公告，所以也不打 pending 标记（没有公告可等）。
+    """
+    marks = list(RE_NUMBERED_SECTION.finditer(text or ""))
+    head = next((i for i, m in enumerate(marks)
+                 if m.group(0).endswith(ACTIVITY_SECTION)), None)
+    if head is None:
+        return []
+    sec_end = marks[head + 1].start() if head + 1 < len(marks) else len(text)
+
+    out: list[dict] = []
+    for chunk in text[marks[head].end():sec_end].split("■")[1:]:
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        parts = RE_ITEM_BREAK.split(chunk, maxsplit=1)
+        name = _demote_quotes(parts[0])
+        if not name:
+            continue
+        start, end = _item_period(chunk, versions)
+        item = {"name": name, "title": f"「{name}」",
+                "start_date": start, "end_date": end}
+        # 判据是**条目本文里没有 `活动时间：`**，不是「日期解不出来」——两者必须分开：
+        # 「命运契约•再启」有 `活动时间：`（只是终点写作「4.6版本结束前」），它的时段不等于
+        # 版本期间，给它套版本期间会落一段错日期；「巡星之礼」则是根本没写时段。
+        # 措辞作第二道确认，避免把将来某条既没写时段又不是登录福利的条目也当成整版。
+        if "活动时间：" not in chunk and any(k in chunk for k in rules.LOGIN_KEYWORDS):
+            item["start_date"], item["end_date"] = versions.get(version) or (None, None)
+            item["type"] = "登录福利"
+            item["description"] = RE_ITEM_NOTE.split(
+                parts[1] if len(parts) > 1 else "", maxsplit=1)[0].strip() or None
+        out.append(item)
+    return out
 
 
 # ─── 更新预告（版本更新日最权威的来源）────────────────────
@@ -281,28 +384,82 @@ def find_activities(posts: list[dict]) -> list[dict]:
     return out
 
 
+# 时间段里的两种相对写法（绝对日期由 parse_period 直接算完）
+RE_VERSION_PERIOD = re.compile(r"(\d+\.\d+)版本期间")      # 两端都取那一版
+RE_VERSION_END_BEFORE = re.compile(r"(\d+\.\d+)版本结束前")  # 终点取那一版的终点，起点是段内绝对日期
+
+# 一帖多活动：正文里用 `▌「X」活动说明` 逐块标出自己的活动（实测「幻造：圣杯战争」那篇是三块）。
+# 一帖一活动的公告没有这种标题——活动名只在 subject 里，整篇正文就是那一块。
+RE_ACTIVITY_HEAD = re.compile(r"[▌■]\s*「([^「」]{1,60})」\s*活动说明")
+
+
 def parse_activity_body(text: str) -> dict:
-    """解析活动正文 → {description, start_date?, end_date?, version_period?}。
+    """解析活动正文 → {description, start_date?, end_date?, version_period?, version_end_before?}。
 
     description 取整段正文（与数据文件里多数条目一致）。
-    「X.Y版本期间」→ version_period='X.Y'（版本号，不是 True），起止由调用方按
-    版本周期补——星铁版本周期不固定，只能靠版本更新说明给出的相邻更新日相减。
+
+    **时间段只认 `活动时间/限时活动期/开启时间` 那一段**（`ACTIVITY_SECTION`），段外的日期不看
+    ——正文里还有参与条件、奖励说明，随手取末个日期会拿到别的日子。
+
+    时间段有三种写法，绝对日期的能在这里算完，两种相对写法要把版本号交回调用方、由版本
+    周期表补（星铁版本周期不固定，只能靠相邻两次更新日相减，见 rules.py）：
+      `X.Y版本期间`   → version_period='X.Y'    两端都取那一版
+      `X.Y版本结束前` → version_end_before='X.Y' 终点取那一版的终点，起点用段内的绝对日期
+    那一版不在版本周期表里时**不猜**：起点照给、终点留空，由管线的日期闸丢掉整条。写死或
+    按 42 天外推都会落一段错日期，宁可让这条等它自己的说明。
     """
     result: dict = {"description": (text or "").strip() or None}
     m = re.search(rules.ACTIVITY_SECTION + r"(.*?)(?=[▌■]|$)", text or "", re.S)
     if not m:
         return result
     seg = m.group(2)
-    vm = re.search(r"(\d+\.\d+)版本期间", seg)
+    vm = RE_VERSION_PERIOD.search(seg)
     if vm:
         result["version_period"] = vm.group(1)
         return result
     start, end = parse_period(seg)
+    vm = RE_VERSION_END_BEFORE.search(seg)
+    if vm:
+        result["version_end_before"] = vm.group(1)
+        if start:
+            result["start_date"] = start
+        return result
+    # 只解得出一个绝对日期的判为不齐：parse_period 会把那一个日期同时当成起止，落一条只有
+    # 一天的活动。与 _item_period 同一条判据（那里是相对端解不出来时先拦一道）。
+    if len(RE_DATE.findall(seg)) < 2:
+        return result
     if start:
         result["start_date"] = start
     if end:
         result["end_date"] = end
     return result
+
+
+def parse_activity_bodies(text: str, name: str) -> list[dict]:
+    """一篇活动公告正文 → **一条或多条**活动，每条比 parse_activity_body 多一个 name。
+
+    绝大多数公告一帖一活动：没有 `▌「X」活动说明` 标题，整篇正文就是一块，name 取 subject
+    里的名字（与数据文件既有的标题逐字一致）。少数公告一帖多活动（「幻造：圣杯战争」那篇
+    除了主体还挂了「命运契约•再启」「命运赠礼」），标题前的部分算首块、每个标题起一块。
+
+    首块没有时间段就不产出——那种公告（如「命运赠礼」有自己的名字、正文只讲主体）留着
+    只会多一条无日期的条目被日期闸丢掉。
+    """
+    text = text or ""
+    marks = list(RE_ACTIVITY_HEAD.finditer(text))
+    head = text[:marks[0].start()] if marks else text
+
+    out: list[dict] = []
+    if re.search(rules.ACTIVITY_SECTION, head):
+        body = parse_activity_body(head)
+        body["name"] = _demote_quotes(name)
+        out.append(body)
+    for i, m in enumerate(marks):
+        stop = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        body = parse_activity_body(text[m.end():stop])
+        body["name"] = _demote_quotes(m.group(1))
+        out.append(body)
+    return out
 
 
 # ─── 大月卡（无名勋礼）────────────────────────────────────

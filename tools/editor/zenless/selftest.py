@@ -1,7 +1,7 @@
 """绝区零解析规则的离线自检：python zenless/selftest.py
 
 用 fixtures/ 里保存的真实公告（米游社正文 + B站动态原文）断言 parse.py / inference.py
-的每个规则。不联网、不读写数据文件。
+的每个规则。不联网、不写数据文件（**会读**数据文件逐字比对既有条目）。
 
 重点盯三件事，任何一件错了都会在下一轮静默插重复条目或改坏日期：
 - **标题**：它是去重主键（keys.event_key），也得与数据文件里的既有条目逐字一致。
@@ -417,6 +417,10 @@ def test_pending_correction():
     check("带标记的候选不参与订正（否则是假补）",
           calibrate.correct_from_candidates([waiting], [dict(waiting)]), [])
     check("标记保留、继续逼着抓正文", waiting.get(keys.PENDING_FIELD), "总纲")
+
+    # 7. 标记必须能过产物 JSON 那道白名单——apply_events 从产物里读它。漏掉的话活动照落盘、
+    #    标记却带不出去，下一轮预筛就按「已录入」跳过它的公告正文，描述与配色永远补不上。
+    check("产物白名单带 pending", keys.PENDING_FIELD in pipeline.OUT_FIELDS, True)
 
     # 6. 找不到对应条目（本轮新增的候选）→ 什么都不做，新增归 apply_events 管
     check("候选不在已有条目里 → 无变更",
