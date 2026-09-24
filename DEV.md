@@ -34,14 +34,21 @@ HoyoCalendar/
 │   ├── lib/              # date-utils, data-loader, event-layout, constants
 │   └── types/            # Zod schema + TypeScript 类型
 ├── data/events/          # 活动 YAML 数据文件
-├── tools/editor/         # Python 数据编辑器
+├── tools/editor/         # Python 数据编辑器 + 自动化维护管线
 │   ├── gui.py            # tkinter 图形界面
-│   ├── extractor.py      # 公告解析引擎 + 米游社 API
-│   ├── yaml_io.py        # YAML 读写模块
-│   └── main.py           # 终端交互式界面
+│   ├── main.py           # 终端交互式界面
+│   ├── maintain.py       # 无人值守入口：三条管线各跑「提取 → 落盘」
+│   ├── common/           # 三条管线共用：抓取 / 主键 / 校准 / 落盘 / 取色 / YAML 读写
+│   ├── genshin/          # 原神管线（pipeline + inference）
+│   ├── starrail/         # 星铁管线（pipeline + parse + selftest）
+│   ├── zenless/          # 绝区零管线（pipeline + parse + inference + selftest）
+│   └── logs/             # 运行日志（按天追加）
 ├── editor.bat            # 一键启动编辑器
 └── DEVELOPMENT_PLAN.md   # 详细开发计划书
 ```
+
+> 三条自动化维护管线各自的**方案 / 现状 / 待办**在 `tools/editor/<游戏>/PLAN.md`，
+> 提取规则在同目录的 `RULES.md`。开工前先读对应 PLAN.md 的 §0「交接速览」。
 
 ## 数据编辑器
 
