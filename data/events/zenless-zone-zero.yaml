@@ -396,3 +396,27 @@
     【参与条件】 在主线第一章「猫的失物」中解锁 「实战模拟室」 后即可参与。 【活动说明】 • 每期「丽都城募」开启后，「基础方案」将自动解锁。绳匠可以通过完成「成长任务」获取城募经验，提高城募等级，获取更多奖励。 • 已解锁「成长计划」的绳匠，如有需要，可通过购买「计划升级」升级至「典藏计划」。
     • 解锁「成长计划」或「典藏计划」并提升城募等级至30级后，可领取奖励[伟大建设者凭证]。[伟大建设者凭证]属于当期限时奖励，不会保留至下一期丽都城募，超期未使用将自动失效。 • 详细规则请前往游戏内 「丽都城募」 查看。
   source_url: https://www.miyoushe.com/zzz/article/76999357
+- id: zzz-常规-2026-09-嗯呢从天降
+  game: zenless-zone-zero
+  title: 「『嗯呢』从天降」
+  type: 常规活动
+  start_date: '2026-09-30'
+  end_date: '2026-10-19'
+  color: '#cce0f0'
+  pending: 总纲
+- id: zzz-常规-2026-10-数据悬赏实战模拟
+  game: zenless-zone-zero
+  title: 「数据悬赏-实战模拟」
+  type: 常规活动
+  start_date: '2026-10-14'
+  end_date: '2026-10-18'
+  color: '#cce0f0'
+  pending: 总纲
+- id: zzz-常规-2026-07-回归丽都羽落重逢
+  game: zenless-zone-zero
+  title: 「回归丽都 羽落重逢」
+  type: 常规活动
+  start_date: '2026-07-17'
+  end_date: '2026-09-08'
+  color: '#cce0f0'
+  pending: 总纲
