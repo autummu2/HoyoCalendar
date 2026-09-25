@@ -1,9 +1,9 @@
 """绝区零活动维护管线：抓公告 → 解析 → 校准 → 写 extracted_zzz.json。
 
-与 genshin/pipeline.py、starrail/pipeline.py 并列的第三条线。真正通用的模块
+与 genshin/pipeline.py、starrail/pipeline.py、themis/pipeline.py 并列的一条线。真正通用的模块
 （common/ 下的 yaml_io / keys / calibrate / colors / bilibili）直接复用。
 
-绝区零的信息来源分工（三条线里最清楚的一条）：
+绝区零的信息来源分工：
 
   停服更新公告（总纲）  版本更新日、版本终点、高难期数、**活动日期的相对写法**
   活动公告（各自）      标题、类型、日期、描述、配图

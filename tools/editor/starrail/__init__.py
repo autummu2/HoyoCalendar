@@ -1,6 +1,6 @@
 """崩坏：星穹铁道（honkai-star-rail）的自动化维护。
 
-与原神侧（genshin/）并列的一套实现，因为两边的公告格式与版本规律都不同
+与 genshin/、zenless/、themis/ 各自独立的一套实现，因为各端的公告格式与版本规律都不同
 （见 rules.py）。共用的底层在 common/：yaml_io / keys / calibrate / extractor /
 bilibili / colors。
 

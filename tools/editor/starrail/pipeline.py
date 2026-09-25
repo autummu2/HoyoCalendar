@@ -1,7 +1,7 @@
 """星铁活动维护管线：抓公告 → 解析 → 校准 → 写 extracted_hsr.json。
 
-与原神侧的 genshin/pipeline.py 是**并列的两条线**，不是同一套逻辑的参数化：两边公告的
-段落标记、卡池标题来源、版本节奏都不同（见 rules.py）。真正通用的三个模块
+与 genshin/pipeline.py、zenless/pipeline.py、themis/pipeline.py 各自独立、**并列**，不是
+同一套逻辑的参数化：各端公告的段落标记、卡池标题来源、版本节奏都不同（见 rules.py）。真正通用的三个模块
 （common/ 下的 yaml_io / keys / calibrate）直接复用，取色统一走 common/colors。
 
 星铁的信息结构比原神清爽：每版本开服当天发的**版本更新说明**是一份总纲，版本名、

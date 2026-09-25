@@ -1,6 +1,6 @@
 """绝区零（zenless-zone-zero）活动维护管线。
 
-与 genshin/、starrail/ 并列的第三条线：同一套 common/（yaml_io / keys / calibrate /
+与 genshin/、starrail/、themis/ 并列的一条线：同一套 common/（yaml_io / keys / calibrate /
 colors / bilibili），各自的 rules.py + parse.py + pipeline.py。
 
     from zenless import run          # 抓取 → 解析 → 校准 → extracted_zzz.json
