@@ -196,3 +196,81 @@
   color: '#f9f2e8'
   tags:
   - 莫弈
+- id: tea-版本-2026-08-未定事件簿60版
+  game: tears-of-themis
+  title: 《未定事件簿》6.0 版本停服更新
+  type: 版本更新
+  start_date: '2026-08-20'
+  end_date: '2026-08-20'
+  color: '#ffffff'
+  source_url: https://www.miyoushe.com/wd/article/77594818
+- id: tea-登录-2026-09-中秋快乐
+  game: tears-of-themis
+  title: 「中秋快乐」
+  type: 登录福利
+  start_date: '2026-09-25'
+  end_date: '2026-09-27'
+  color: '#f2d7b9'
+  source_url: https://www.miyoushe.com/wd/article/78394029
+- id: tea-登录-2026-09-邮轮之旅前音
+  game: tears-of-themis
+  title: 「邮轮之旅前音」
+  type: 登录福利
+  start_date: '2026-09-24'
+  end_date: '2026-10-17'
+  color: '#c0d8ec'
+  source_url: https://www.miyoushe.com/wd/article/78341229
+- id: tea-卡池-2026-09-夏彦夏花永隽限时
+  game: tears-of-themis
+  title: 夏彦SSR【夏花永隽】限时复刻
+  type: 卡池
+  start_date: '2026-09-18'
+  end_date: '2026-10-02'
+  color: '#f1d1ba'
+  source_url: https://www.miyoushe.com/wd/article/78222092
+  tags:
+  - 夏彦
+  - SSR
+- id: tea-卡池-2026-09-莫弈生日系列限时
+  game: tears-of-themis
+  title: 莫弈生日系列限时复刻
+  type: 卡池
+  start_date: '2026-09-17'
+  end_date: '2026-09-19'
+  color: '#ccdfd8'
+  source_url: https://www.miyoushe.com/wd/article/78179679
+  tags:
+  - 莫弈
+- id: tea-常规-2026-09-心有所欲限时复刻
+  game: tears-of-themis
+  title: 「心有所欲」限时复刻
+  type: 常规活动
+  start_date: '2026-09-15'
+  end_date: '2026-09-19'
+  color: '#f2c9b9'
+  source_url: https://www.miyoushe.com/wd/article/78159159
+  tags:
+  - 夏彦
+  - 左然
+  - 莫弈
+  - 陆景和
+  - MR
+- id: tea-登录-2026-09-教师节快乐
+  game: tears-of-themis
+  title: 「教师节快乐」
+  type: 登录福利
+  start_date: '2026-09-10'
+  end_date: '2026-09-12'
+  color: '#edd6be'
+  source_url: https://www.miyoushe.com/wd/article/78073556
+- id: tea-卡池-2026-09-莫弈莫负良辰限时
+  game: tears-of-themis
+  title: 莫弈SSR【莫负良辰】限时复刻
+  type: 卡池
+  start_date: '2026-09-04'
+  end_date: '2026-09-18'
+  color: '#f0e7bb'
+  source_url: https://www.miyoushe.com/wd/article/77952195
+  tags:
+  - 莫弈
+  - SSR
