@@ -106,7 +106,7 @@
     ※活动期间，前往「专属甜心」系统手工台制作「知识满满抱枕」甜心家装消耗的蜜意甜心值减半
 - id: tea-常规-2026-08-濯影拾辉活动限时
   game: tears-of-themis
-  title: 「濯影拾辉」活动限时复刻
+  title: 「濯影拾辉」限时复刻
   type: 常规活动
   start_date: '2026-08-27'
   end_date: '2026-08-31'
@@ -116,7 +116,7 @@
   - 左然
 - id: tea-卡池-2026-08-冰原上的审判活动
   game: tears-of-themis
-  title: 「NXX-冰原上的审判」活动女神之影限时复刻
+  title: 「NXX-冰原上的审判」限时复刻
   type: 卡池
   start_date: '2026-08-27'
   end_date: '2026-09-05'
@@ -146,7 +146,7 @@
   end_date: '2026-09-09'
   color: '#cdefe9'
   description: 邀请函、SSR、限时活动
-  source_url: https://www.miyoushe.com/wd/article/77934380
+  source_url: https://www.miyoushe.com/wd/article/77910710
   tags:
   - 夏彦
   - SSR
