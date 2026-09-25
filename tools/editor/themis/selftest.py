@@ -262,17 +262,17 @@ def test_tags():
     by_title: dict = {}
     for e in existing:
         by_title.setdefault(e["title"], e)
-    n = 0
-    for e in pipeline.collect(NEWS, VERSION_POSTS, body_of):
+    evs = pipeline.collect(NEWS, VERSION_POSTS, body_of)
+    # 判据是**存在性**不是条数：数据文件每落盘一轮就多几条，把「对上了几条」写成期望值
+    # 等于把某一轮的快照钉进自检（落盘一次就得改一遍数字）。这里问「有没有对不上的」
+    check("候选标题都能在数据文件里找到",
+          [e["title"] for e in evs if e["title"] not in by_title], [])
+    for e in evs:
         m = by_title.get(e["title"])
         if not m:
             continue
-        n += 1
         check(f"标签与手工一致 {e['title'][:14]}",
               sorted(e["tags"]), sorted(m.get("tags") or []))
-    check("可比对条数", n, 10)   # 18 条候选里标题能与手工条目对上的条数。
-                                # 加后缀前后都是 10：以前 9/17 那条是**并到** 9/20 那条上
-                                # 比对的（两条同名），现在对上的是它自己那条（`…生日拼图`）
 
 
 # ─── 公告栏：版本停服公告 ─────────────────────────────────
@@ -351,10 +351,17 @@ def test_collect():
 # ─── 预筛：已录入的帖子不取正文 ───────────────────────────
 
 def test_pre_screen():
+    # 「已录入」靠帖子 id 认（RULES §4.3）：两种来源都要认得出。这两条用手写条目测，
+    # 不读数据文件 —— 读文件就是拿某一轮的快照当期望值（落盘一次要改一遍数字）
+    check("认 post_id 字段", keys.post_id_of({"post_id": 77934380}), "77934380")
+    check("认 source_url 里的 id",
+          keys.post_id_of({"source_url": "https://www.miyoushe.com/wd/article/77934380"}),
+          "77934380")
+    check("两样都没有就不认", keys.post_id_of({"title": "「青葱寄愿」"}), None)
+
     existing = yaml_io.load_events(GAME)
     recorded = {pid for e in existing if (pid := keys.post_id_of(e))}
-    check("数据文件里带帖子 id 的条目", sorted(recorded),
-          ["76662839", "76913744", "77075180", "77910710", "77934380"])
+    pid_of_subject = {p["subject"]: str(p["post_id"]) for p in NEWS}
 
     fetched = []
 
@@ -364,15 +371,18 @@ def test_pre_screen():
 
     evs = pipeline.collect(NEWS, VERSION_POSTS, recording_body_of, existing)
     skipped = [d for d in pipeline.DECISIONS if d["verdict"] == "跳过"]
-    # 窗口内 2 篇已录入：77934380（爱的未定式那篇）、77910710（卡池那篇）
-    check("跳过条数", len(skipped), 2)
-    check("跳过原因", [d["why"] for d in skipped], ["已录入", "已录入"])
+    # 判据一律是**性质**（每一篇都…）与**关系**（两边加起来等于…），不写「跳过几篇 /
+    # 抓几篇」这类绝对值：那几个数由数据文件决定，每落盘一轮就变（2026-09-25 落盘前是
+    # 2 篇 / 29 篇，落盘后 9 篇 / 22 篇 —— 判据没动，数字自己会跑）
+    check("跳过的每一篇都是已录入的",
+          [d["subject"] for d in skipped
+           if pid_of_subject.get(d["subject"]) not in recorded], [])
+    check("跳过原因", {d["why"] for d in skipped}, {"已录入"})
     check("已录入的帖子不再取正文", [p for p in fetched if p in recorded], [])
-    check("取正文篇数", len(fetched), 29)        # 过闸 31 条走正文，2 条被预筛
-    # 候选 18 → 17：预筛省的**不只是请求**。少的正是 `夏彦SSR【换日线】` ——
-    # 卡池那篇帖子是它唯一的来源，而它已经录过了（apply_events 本来也会跳过），
-    # 所以**落盘结果不变**；爱的未定式那篇有兄弟帖（77933880）照旧产出同一条
-    check("候选条数", len(evs), 17)
+    check("跳过 + 取正文 == 过闸条数", len(skipped) + len(fetched), 31)
+    # 预筛省的**不只是请求** —— 已录入那条若只有一篇帖子，它的候选就不再产出
+    # （`夏彦SSR【换日线】` 就是：它已经录过了，`apply_events` 本来也会跳过，
+    #  所以**落盘结果不变**）
     check("少的正是已录入那条",
           "夏彦SSR【换日线】" not in [e["title"] for e in evs], True)
 
@@ -436,13 +446,11 @@ def test_identity():
 def test_matches_existing():
     existing = yaml_io.load_events(GAME)
     evs = pipeline.collect(NEWS, VERSION_POSTS, body_of)
-    dup = {e["title"] for e in evs if keys.find_duplicate(e, existing, GAME)}
-    # 标题与手工条目逐字相同的十个 —— 认得出来，apply_events 会跳过
-    check("认得出手工已有的条目", sorted(dup),
-          ["「NXX-冰原上的审判」限时复刻", "「NXX特别调查」",
-           "「岁悦同欢·莫弈篇」", "「岁悦同欢·莫弈篇」生日拼图", "「星航寻梦」",
-           "「濯影拾辉」限时复刻", "「爱的未定式·夏彦篇」", "「秋颂绮思」",
-           "「青葱寄愿」", "夏彦SSR【换日线】"])
+    # 判据是**存在性**不是条数：候选由冻结的 fixtures 推出（不含 `existing`，见 collect），
+    # 所以「哪些标题该认得出来」是定死的；数据文件只会往里加。问「有没有认不出的」即可
+    # —— 落盘一轮不会让这条变红，删掉一条已录入的活动才会（那才是真回归）
+    missing = [e["title"] for e in evs if keys.find_duplicate(e, existing, GAME) is None]
+    check("候选全部认得成数据文件里已有的条目", missing, [])
 
     # 标题对齐（RULES §4.2 裁定 15）：手工的 `「星航寻梦」-左然MR【幻航】` /
     # `NXX特别调查-主线第二十章` 已改成管线取的活动名，主键直接命中 ⇒ 首轮零重复。
