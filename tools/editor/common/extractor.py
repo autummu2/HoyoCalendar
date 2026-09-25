@@ -24,6 +24,13 @@ GIDS_MAP = {
     "tears-of-themis": 4,
 }
 
+# 一个游戏社区分「公告栏」(`type=1`) 与「资讯栏」(`type=3`)，活动的发布位置因游戏而异：
+# 原神/星铁/绝区零的公告栏就是活动公告栏，未定事件簿的活动信息在资讯栏。
+# 2026-09-25 实测 `gids=4`：`type=1` 全是「日常更新公告 / 停服更新 / 假期限时通知」
+# 这类运维帖，`type=3` 才是「NXX-非常假日丨活动PV」「限时签到预告」这类活动信息。
+# 缺省取公告栏，只有明确把活动放在资讯栏的游戏才列在这里。
+NEWS_TYPE_MAP = {"tears-of-themis": 3}
+
 GAME_KEYWORDS = {
     "genshin-impact": {
         "names": ["原神", "Genshin", "提瓦特", "旅行者"],
@@ -449,8 +456,9 @@ def parse_activity_body(text: str) -> dict:
 def fetch_post_list(game_id: str = "genshin-impact", page_size: int = 10) -> list[dict]:
     """获取公告列表"""
     gids = GIDS_MAP.get(game_id, 2)
+    ntype = NEWS_TYPE_MAP.get(game_id, 1)
     url = "https://bbs-api-static.miyoushe.com/painter/wapi/getNewsList"
-    params = {"client_type": "4", "gids": str(gids), "page_size": str(page_size), "type": "1"}
+    params = {"client_type": "4", "gids": str(gids), "page_size": str(page_size), "type": str(ntype)}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/99.0.4844.84 Safari/537.36",
         "Accept": "application/json",
