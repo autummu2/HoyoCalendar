@@ -36,6 +36,7 @@ GAME_ID_PREFIX = {
     "genshin-impact": "gi",
     "honkai-star-rail": "hsr",
     "zenless-zone-zero": "zzz",
+    "tears-of-themis": "tea",
 }
 
 # 米游社文章路径。只登记已核对过的游戏——未核对的不猜，宁可不给 source_url
@@ -46,6 +47,7 @@ GAME_URL_PATH = {
     "genshin-impact": "ys",
     "honkai-star-rail": "sr",
     "zenless-zone-zero": "zzz",
+    "tears-of-themis": "wd",
 }
 
 EVENT_TYPES = [

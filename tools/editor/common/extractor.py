@@ -453,10 +453,15 @@ def parse_activity_body(text: str) -> dict:
     return result
 
 
-def fetch_post_list(game_id: str = "genshin-impact", page_size: int = 10) -> list[dict]:
-    """获取公告列表"""
+def fetch_post_list(game_id: str = "genshin-impact", page_size: int = 10,
+                    news_type: int | None = None) -> list[dict]:
+    """获取公告列表。
+
+    `news_type` 显式指定栏目（1=公告栏 / 3=资讯栏），省略时按 NEWS_TYPE_MAP 走默认。
+    未定两个栏目都要抓：活动在资讯栏、版本停服公告在公告栏，而 NEWS_TYPE_MAP 只能登记一个。
+    """
     gids = GIDS_MAP.get(game_id, 2)
-    ntype = NEWS_TYPE_MAP.get(game_id, 1)
+    ntype = news_type if news_type is not None else NEWS_TYPE_MAP.get(game_id, 1)
     url = "https://bbs-api-static.miyoushe.com/painter/wapi/getNewsList"
     params = {"client_type": "4", "gids": str(gids), "page_size": str(page_size), "type": str(ntype)}
     headers = {

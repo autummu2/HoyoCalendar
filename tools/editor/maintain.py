@@ -7,7 +7,8 @@
 
 先 chdir 到本脚本目录（日志与编辑器状态文件用相对路径），再对每个游戏依次执行
 「提取 + 校准 → 落盘」：原神走 genshin.pipeline.run，星铁走 starrail.run，绝区零走
-zenless.run，三者都产出各自目录下的 extracted_*.json，再交给 apply_events.main 落盘。
+zenless.run，未定走 themis.run，四者都产出各自目录下的 extracted_*.json，再交给
+apply_events.main 落盘。⚠️ 未定**没有校准**（裁定 19，只增不改）。
 
 全程 stdout 追加写入 logs/YYYY-MM-DD.log（UTF-8）。自动化运行无人值守，
 日志是事后核查「那天到底干了什么」的唯一依据——尤其是正文接口被风控时，
@@ -23,6 +24,7 @@ import traceback
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import starrail
+import themis
 import zenless
 from common import apply_events
 from genshin import pipeline as genshin
@@ -67,7 +69,14 @@ def _zenless():
     apply_events.main("zenless-zone-zero", zenless.OUT_FILE)
 
 
-GAMES = [("原神", _genshin), ("崩坏：星穹铁道", _starrail), ("绝区零", _zenless)]
+def _themis():
+    # 未定只有「提取 → 落盘」，中间没有 calibrate（裁定 19：只增不改）
+    themis.run()
+    apply_events.main("tears-of-themis", themis.OUT_FILE)
+
+
+GAMES = [("原神", _genshin), ("崩坏：星穹铁道", _starrail), ("绝区零", _zenless),
+         ("未定事件簿", _themis)]
 
 
 def main():

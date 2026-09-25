@@ -4,23 +4,25 @@
 主键是**身份**，一旦确定就不再变。混用两者会导致：日期一改，旧条目认不出来 → 重复插入。
 
 唯一的**有意破例**是活动类（见下表第 2 行与 ACTIVITY_TYPES）：标题会跨版本重名，不带日期
-就会把新一期静默丢掉。代价靠 find_duplicate 的「同名 7 天兜底」与「排除日期会被校准改写的
-类型」封住；周期性事件那几行是同一类破例，只是范围更窄（标题一字不变）。
+就会把新一期静默丢掉。代价靠 find_duplicate 的日期兜底（口径按端点，见 EXACT_FALLBACK_GAMES）
+与「排除日期会被校准改写的类型」封住；周期性事件那几行是同一类破例，只是范围更窄（标题一字不变）。
 
 主键只取不含解析假设的字段。标题格式会随版本变（武器池 7.0 是
 `祈愿：「长柄武器·血染荒城」…`，7.1 变成 `「神铸赋形」祈愿：…`），所以能不用
 括号解析就不用：
 
   卡池 / 版本大活动 / 大月卡                        → (类型, 完整标题)
+  未定 卡池（返场时标题逐字相同）                    → (类型, 完整标题, 开始日期)，见 DATED_BANNER_GAMES
   常规活动 / 登录福利 / 网页活动                    → (完整标题, 开始日期)（类型要等正文，且会跨版本重名）
   幽境危战                                        → 米游社公告 post_id（标题每期一字不变）
   版本更新 / 前瞻直播                              → (类型, 版本号)
   深境螺旋 / 幻想真境剧诗                          → (标题, 开始日期)（无公告，标题自带 MMDD，带年份防跨年撞）
   「位面分裂」/「花藏繁生」/「异器盈界」             → (标题, 开始日期)（每期标题一字不变）
 
-版本类事件另加「±7 天内同类型即同一事件」的日期兜底：inference 的版本号是朴素
-+0.1 预测（`_version_number`），且标题一旦生成就不再改号，所以版本号可能预测错；
-此时主键失配，靠日期兜底仍能认出是同一事件而不是插一条重复。
+版本类事件另加一道日期兜底：主键里的版本号是朴素 +0.1 预测（`_version_number`），
+且标题一旦生成就不再改号，所以版本号可能预测错；此时主键失配，靠日期兜底仍能认出
+是同一事件而不是插一条重复。兜底的宽严按端点分（EXACT_FALLBACK_GAMES）：默认是
+「±7 天内同类型/同名」，不接校准的端点只认同名同起日或同源帖。
 """
 
 from __future__ import annotations
@@ -38,6 +40,14 @@ DATED_KEYED_PREFIXES = (
     "深境螺旋", "幻想真境剧诗",                        # 原神
     "「位面分裂」", "「花藏繁生」", "「异器盈界」",       # 星铁
 )
+
+# 卡池身份带开始日期的游戏。卡池一般不带日期（标题里就有角色名与池名，不会重名），
+# 但这几个游戏的卡池**会返场**：未定的帖子标题里直接写着 `限时返场` / `往期复刻`，
+# 同一池子再开的标题逐字相同 —— 两期可能相隔几十天，±7 天兜底救不了，
+# 不带日期的话返场那一期会被当成「已录过」静默丢掉。
+# ⚠️ 这是前瞻性判据：窗口内还没撞上（手工数据里 `「NXX-冰原上的审判」活动女神之影
+# 限时复刻` 是已踩到边界的那条），但返场一旦发生就是静默丢数据。
+DATED_BANNER_GAMES = {"tears-of-themis"}
 
 # 版本类事件：主键用版本号
 VERSION_KEYED_TYPES = {"版本更新", "前瞻直播"}
@@ -77,8 +87,22 @@ TAG_PENDING_TYPE = "待确认"          # 类型（版本大活动）由 B站多
 PENDING_TAGS = (TAG_PENDING_VERSION, TAG_PENDING_TYPE)
 
 # 版本号预测错、或活动日期被人工订正时，同类型（活动类则同名）日期相差不超过这个
-# 天数视为同一事件
+# 天数视为同一事件。**只给宽口径端点用**（见 EXACT_FALLBACK_GAMES）。
 DATE_TOLERANCE_DAYS = 7
+
+# 日期兜底取**精确口径**的端点：同名同起日，或同源帖（候选与条目指向同一篇公告）。
+# 判据的出处是两条结构性差异，不是「未定特殊」：
+#
+#   1. 日期不会被 `calibrate` 自动改写（未定不接校准，裁定 19）—— 校准能把日期挪很远，
+#      被校准改写的端点只能用「挨着」近似；
+#   2. 一篇公告至多落出一条条目（未定一篇帖子解一条）—— 一篇公告落多条条目的端点里
+#      （绝区零总纲），帖子 id 当不了身份判据。
+#
+# 未定两种都符合，所以人工订正日期后能靠**帖子 id 精确**认回，不需要模糊窗口。而模糊
+# 窗口在未定只有假阳性，假阳性的后果是**静默吞掉一条活动**（2026-09-25 实测：9/17 与
+# 9/20 两条同名不同期的活动互吞），比「多一条可见的重复」严重得多。
+# ⚠️ 未定的调用方**必须传 game**（`apply_events` 传的是 `game_id`）：不传即按宽口径算。
+EXACT_FALLBACK_GAMES = {"tears-of-themis"}
 
 
 def version_of(title: str) -> str | None:
@@ -99,8 +123,13 @@ def post_id_of(event: dict) -> str | None:
     return m.group(1) if m else None
 
 
-def event_key(event: dict) -> tuple | None:
-    """返回条目的去重主键；身份判不出来时返回 None（调用方需容错）。"""
+def event_key(event: dict, game: str | None = None) -> tuple | None:
+    """返回条目的去重主键；身份判不出来时返回 None（调用方需容错）。
+
+    `game` 只在 DATED_BANNER_GAMES 里那几个游戏上有影响（卡池要不要带日期）。
+    **比对的两侧必须传同一个 game**，否则同一个卡池在候选侧与数据文件侧会算出
+    两个主键，apply_events 认不出来就插重复。
+    """
     etype = event.get("type", "")
     title = event.get("title", "")
 
@@ -113,6 +142,9 @@ def event_key(event: dict) -> tuple | None:
         return (etype, "post", pid) if pid else None
 
     if title.startswith(DATED_KEYED_PREFIXES):
+        return (etype, title, event.get("start_date") or "")
+
+    if etype == "卡池" and game in DATED_BANNER_GAMES:
         return (etype, title, event.get("start_date") or "")
 
     if etype in ACTIVITY_TYPES:
@@ -128,18 +160,27 @@ def _date(value) -> datetime.date | None:
         return None
 
 
-def find_duplicate(candidate: dict, existing: list[dict]) -> dict | None:
+def find_duplicate(candidate: dict, existing: list[dict], game: str | None = None) -> dict | None:
     """在 existing 里找与 candidate 同身份的条目，没有则返回 None。
 
-    先按主键精确匹配；主键带日期的两类（版本类与活动类）再补一道日期兜底：主键失配时
-    看同类型 / 同名条目里有没有日期相差 7 天以内的。兜底是必需的——版本号是朴素 +0.1
-    预测，活动的开始日期会被人工订正（本仓库就这么干过），一旦值被改写，带日期的主键
-    就认不回来了，没有兜底就会插重复。
+    先按主键精确匹配；主键带日期的两类（版本类与活动类）再补一道兜底：主键失配时
+    看同类型（版本类）/ 同名（活动类）条目里有没有认得出是同一事件的。兜底是必需的
+    ——版本号是朴素 +0.1 预测，活动的开始日期会被人工订正（本仓库就这么干过），
+    一旦值被改写，带日期的主键就认不回来了，没有兜底就会插重复。
+
+    认得出的判据按端点分（EXACT_FALLBACK_GAMES）：
+
+      - 宽口径（默认，三端）：开始日期相差 ≤7 天；
+      - 精确口径（未定）：**同名同起日**，或**同源帖** —— 候选与条目指向同一篇公告
+        （`post_id` vs `source_url`）。未定不接校准、一篇公告至多一条条目，人工订正
+        日期又是在那篇帖子产出的条目上做的，所以帖子 id 就是精确判据，不需要窗口。
+
+    `game` 需与 event_key 的同一侧传一致（见 event_key）。
     """
-    key = event_key(candidate)
+    key = event_key(candidate, game)
     if key is not None:
         for e in existing:
-            if event_key(e) == key:
+            if event_key(e, game) == key:
                 return e
 
     etype = candidate.get("type")
@@ -148,18 +189,28 @@ def find_duplicate(candidate: dict, existing: list[dict]) -> dict | None:
     # （日期会被校准改写），但正因为日期进不了主键，才最需要兜底——同一条活动的类型从
     # 常规活动变成版本大活动时主键会失配，兜底再把它排除掉，apply_events 就会插一条重复
     # （离线复现过：「悠悠律动舞力聚会」类型一变，find_duplicate 返回 None）。
-    if not by_version and etype not in ANNOUNCEMENT_ACTIVITY_TYPES:
+    #
+    # 未定卡池同理，也要放进兜底：它的主键带日期（DATED_BANNER_GAMES），日期一旦被人工
+    # 订正主键就失配，而卡池不在 ANNOUNCEMENT_ACTIVITY_TYPES 里，不放行就会插重复。
+    dated_banner = etype == "卡池" and game in DATED_BANNER_GAMES
+    if not by_version and not dated_banner and etype not in ANNOUNCEMENT_ACTIVITY_TYPES:
         return None
     d = _date(candidate.get("start_date"))
     if d is None:
         return None
+    strict = game in EXACT_FALLBACK_GAMES
+    pid = post_id_of(candidate)
     for e in existing:
         # 版本类按类型认，活动类按标题认——这两类的主键里分别含版本号 / 标题
         same = e.get("type") == etype if by_version else e.get("title") == candidate.get("title")
         if not same:
             continue
+        # 同源帖：只对精确口径开放。宽口径端点里一篇公告会落出多条条目（绝区零总纲），
+        # 帖子 id 在那里当不了身份判据。
+        if strict and pid and post_id_of(e) == pid:
+            return e
         ed = _date(e.get("start_date"))
-        if ed and abs((ed - d).days) <= DATE_TOLERANCE_DAYS:
+        if ed and abs((ed - d).days) <= (0 if strict else DATE_TOLERANCE_DAYS):
             return e
     return None
 

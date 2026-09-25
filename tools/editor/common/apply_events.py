@@ -1,13 +1,13 @@
 """新增落盘：把管线产出的 JSON 里的新活动写入 data/events/<game_id>.yaml。
 
 本模块**只新增，不改动已有条目**——已有条目的值修正由 calibrate.py 负责。
-「是否已存在」按 keys.find_duplicate 判定（主键 + 同名/同类型 7 天日期兜底）。
+「是否已存在」按 keys.find_duplicate 判定（主键 + 日期兜底，口径按端点，见 keys.EXACT_FALLBACK_GAMES）。
 活动类的主键是 (标题, 开始日期)，**类型不在主键里**——所以「先按默认类型落盘、等公告
 到了再订正类型」不会插重复（类型变了主键不变）。把类型改对是 calibrate.correct_from_candidates
 的事（在管线里跑，本模块不参与）。
 
 - 新增：find_duplicate 找不到同身份条目。
-- 跳过：找到了（日期可能已被人工订正过，靠 7 天兜底仍认得出）。
+- 跳过：找到了（日期可能已被人工订正过，靠日期兜底 / 同源帖仍认得出）。
 
 两条管线共用：由调用方传入各自的产物路径（原神 genshin/extracted_full.json、
 星铁 starrail/extracted_hsr.json）。
@@ -49,7 +49,7 @@ def main(game_id: str = GAME, filename=None):
             invalid.append(f"{ex.get('title') or '(无标题)'} {ex.get('start_date') or '?'}~{ex.get('end_date') or '?'}")
             continue
         title, start = ex["title"], ex["start_date"]
-        if keys.find_duplicate(ex, events) is not None:
+        if keys.find_duplicate(ex, events, game_id) is not None:
             skipped.append(title)
             continue
         ev_id = auto_id(title, start, ex["type"], game_id)
