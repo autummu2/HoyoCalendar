@@ -10,9 +10,12 @@
    是资讯栏，公告栏那一路显式传 `news_type=rules.VERSION_TAB`。
 2. **一个活动拆成好几篇发**，所以没有「总纲」可用：每篇帖子自己判类型、自己解日期，
    解不出完整时段就丢，等下一篇带完整时段的（**不落 `pending` 半条数据**，裁定 10）。
-   没有归并机制，也没有分组 —— 见 RULES §2.3。
+   没有归并机制，也没有分组 —— 见 RULES §2.3。复刻 / 返场帖的标题统一收成
+   「活动名 + 限时复刻」（裁定 32），首开与复刻两期的标题因此分得开。
 3. **不接 `common.calibrate`**（裁定 19）：管线**只增不改**，落盘后的日期不再被任何
    自动流程改写，要改只能人工手改 YAML。所以这条线是「提取 + 落盘」，没有校准段。
+   预筛（已录入的帖子不取正文）因此按**帖子 id** 认，而不是另三端那样按标题认 ——
+   未定的候选标题（`主题丨子标题`）从来不是活动名，离线阶段认不出是哪条活动。
 
 ⚠️ `collect` 是纯函数（不联网、不写文件），`run` 只负责抓取与落盘。分开是为了能拿
 fixtures/ 里的真实公告离线跑一遍（selftest.py + `python themis/pipeline.py --dry-run`）。
@@ -40,7 +43,7 @@ try:
 except OSError:
     pass
 
-from common import body_cache, keys
+from common import body_cache, keys, yaml_io
 from common.colors import pastel_from_url
 from common.extractor import fetch_post, fetch_post_list
 from themis import parse, rules
@@ -63,10 +66,11 @@ OUT_FIELDS = ("title", "type", "start_date", "end_date", "color", "tags", "post_
 # 正文抓取成败计数。无人值守运行后人工核查用：风控（retcode 1034）会让正文大面积
 # 抓不到，条目因拿不到日期被日期闸丢弃，表现为「本轮 0 新增」，容易被误当成
 # 「今天没有新活动」。日志里的这一行是分辨两者的第一依据。
-FETCH_STATS = {"ok": 0, "fail": 0, "risk": 0, "cache": 0}
+FETCH_STATS = {"ok": 0, "fail": 0, "risk": 0, "cache": 0, "skip": 0}
 
 # 本轮每篇帖子的判定（[{"subject", "verdict", "why", "type"}]）。dry-run 与日志都靠它，
-# 因为未定的漏斗是**按帖子**收敛的：50 篇 → 19 篇不进正文 → 21 条候选 → 去重后 18 条。
+# 因为未定的漏斗是**按帖子**收敛的：50 篇 → 19 篇不进正文 → 19 条候选 → 去重后 18 条。
+# verdict 三态：候选 / 丢弃 / 跳过（跳过 = 已录入，帖子 id 命中，见 collect）。
 # 只报「本轮新增几条」看不出是哪一道闸起的作用。
 DECISIONS: list[dict] = []
 
@@ -99,23 +103,35 @@ def _fetch(post_id):
 
 # ─── 解析（纯函数，离线可跑）─────────────────────────────
 
-def collect(news_posts: list[dict], version_posts: list[dict], body_of) -> list[dict]:
+def collect(news_posts: list[dict], version_posts: list[dict], body_of,
+            existing: list[dict] = ()) -> list[dict]:
     """列表 + 正文 → 候选条目（不含颜色）。**不联网、不写文件**。
 
     `body_of(post_id) -> (text, images)` 由调用方给：run 给联网+缓存的 `_fetch`，
-    selftest / dry-run 给 fixtures 里的正文。
+    selftest / dry-run 给 fixtures 里的正文。`existing` 是数据文件里已有条目，
+    用来做「已录入就不取正文」的预筛（省正文请求，正对着米游社风控）。
 
-    漏斗（RULES §2.2）：① 标题负向名单（不取正文）→ ② 正文解不出完整时段就丢
-    → ③ 复刻二分（礼包复刻丢）→ ④ 复合标签判版本大活动 → 去重（类型取并集）。
+    漏斗（RULES §2.2）：⓪ 预筛：帖子 id 已录入（不取正文）→ ① 标题负向名单（不取正文）
+    → ② 正文解不出完整时段就丢 → ③ 复刻二分（礼包复刻丢）→ ④ 复合标签判版本大活动
+    → 去重（类型取并集）。
 
-    没有「已录过就跳过」的预筛（另三端有）：未定的候选标题要等正文解析出来才知道
-    （列表标题是 `主题丨子标题`，从来不是活动名），列表阶段认不出是哪条活动。
+    预筛按**帖子 id** 认。另三端按标题认（`keys.likely_recorded`），未定这条路走不通：
+    候选侧此刻手里只有 `主题丨子标题`，条目侧存的是 `title_of` 推出来的活动名，离线阶段
+    两边对不上；放宽成「主题在条目里出现过」又会踩未定特有的坑 —— 实测有同名不同期的
+    活动（主题 `岁悦同欢·莫弈篇` 下既有 9/17 的生日拼图也有 9/20 的活动本体），误判一次
+    就是静默少一条。帖子 id 没有这个问题：`collect` 一篇帖子至多产出一条候选，条目与帖
+    因此是一对一，「这篇帖子已经录过」是精确判断。
     """
     DECISIONS.clear()
+    recorded = {pid for e in existing if (pid := keys.post_id_of(e))}
     events: list[dict] = []
     for p in parse.find_news(news_posts):
         subject = p.get("subject") or ""
         post_id = p.get("post_id")
+        if str(post_id) in recorded:
+            FETCH_STATS["skip"] += 1
+            _note(subject, "跳过", "已录入")
+            continue
         text, images = body_of(post_id)
         if not text:
             _note(subject, "丢弃", "正文抓不到")
@@ -138,7 +154,7 @@ def collect(news_posts: list[dict], version_posts: list[dict], body_of) -> list[
             "post_id": post_id,
         })
         _note(subject, "候选", f"{start} ~ {end}", etype)
-    return _version_events(version_posts) + _merge(events)
+    return _version_events(version_posts, recorded) + _merge(events)
 
 
 def _merge(events: list[dict]) -> list[dict]:
@@ -159,15 +175,15 @@ def _merge(events: list[dict]) -> list[dict]:
     return list(out.values())
 
 
-def _version_events(version_posts: list[dict]) -> list[dict]:
+def _version_events(version_posts: list[dict], recorded: set[str] = frozenset()) -> list[dict]:
     """当前版本的停服更新条目（公告栏）。
 
     只发**最新**那一版：公告栏窗口有 8.5 个月，里面躺着 5 份停服公告，全发出来等于
     一次性回填 4 个历史版本，与「首次回填 = 不补」（裁定 14）相抵。列表按时间倒序，
-    第一条命中即当前版本。
+    第一条命中即当前版本。最新那版已录入就不再取（往回捞旧版本 = 回填，同样不做）。
     """
     notes = parse.parse_version_notes(version_posts)
-    if not notes:
+    if not notes or str(notes[0]["post_id"]) in recorded:
         return []
     n = notes[0]
     return [{"title": rules.VERSION_UPDATE_TITLE.format(ver=n["version"]),
@@ -183,23 +199,24 @@ def run(dry_run: bool = False):
 
     dry_run=True 只打印判定表、不写产物（RULES §3 验证方式的第一步）。
     """
-    FETCH_STATS.update(ok=0, fail=0, risk=0, cache=0)
+    FETCH_STATS.update(ok=0, fail=0, risk=0, cache=0, skip=0)
 
     version_posts = fetch_post_list(GAME, page_size=rules.PAGE_SIZE,
                                     news_type=rules.VERSION_TAB)
     news_posts = fetch_post_list(GAME, page_size=rules.PAGE_SIZE)
     print(f"== 列表 == 公告栏 {len(version_posts)} 条 / 资讯栏 {len(news_posts)} 条")
 
-    all_events = collect(news_posts, version_posts, _fetch)
+    all_events = collect(news_posts, version_posts, _fetch, yaml_io.load_events(GAME))
 
     print(f"== 正文抓取 == 成功 {FETCH_STATS['ok']} / 失败 {FETCH_STATS['fail']}"
           + (f"（其中风控 1034: {FETCH_STATS['risk']}）" if FETCH_STATS["risk"] else "")
-          + f" / 缓存命中 {FETCH_STATS['cache']}")
+          + f" / 缓存命中 {FETCH_STATS['cache']} / 预筛跳过 {FETCH_STATS['skip']}")
 
     print("== 判定 ==")
     for d in DECISIONS:
         tag = d["verdict"]
-        print(f" {'+' if tag == '候选' else ' x'}", d["subject"][:44],
+        mark = "+" if tag == "候选" else ("·" if tag == "跳过" else " x")
+        print(f" {mark}", d["subject"][:44],
               f"[{d['why']}]" if d["why"] else "")
 
     # 取色：只有版本更新是固定色（公告栏的帖子没有封面，见 rules.COLORS），
