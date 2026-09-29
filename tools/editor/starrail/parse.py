@@ -74,6 +74,14 @@ def parse_period(seg: str) -> tuple[str | None, str | None]:
 RE_VERSION_DURATION = re.compile(r"\d+\.\d+版本的持续时间为\s*(.*?)。", re.S)
 RE_ENDGAME_THEME = re.compile(r"本期主题：[「『]([^」』]+)[」』]")
 
+# 「■玩法」段里的一条：`型名•期名 <起始时刻> - <终点日期> <终点时刻>`。
+# 起始时刻**可以不是 `H:MM`** —— 4.6 写的是 `4.6版本更新后`（指开服时刻），期名后面的
+# 日期照抄即可，时刻不参与算日期（只有终点的 `HH:MM` 要判「是否清晨」）。所以那一段用
+# `\S*` 吞掉，不校验形状。整条必须**落在同一个 `●` 条目内**，匹配前先按 `●` 切开。
+RE_ENDGAME_ENTRY = re.compile(
+    r"\s*([^•]+)•(.*?)\s+(\d{4})/(\d{1,2})/(\d{1,2})"
+    r"\s+\S*\s*-\s*(\d{4})/(\d{1,2})/(\d{1,2})\s+(\d{1,2}):(\d{2})")
+
 
 def _strip_mode_prefix(name: str) -> str:
     """「异相仲裁•军团再临」→「军团再临」；已是纯期名则原样返回。"""
@@ -95,7 +103,7 @@ def parse_version_notes(text: str, subject: str) -> dict | None:
     - 「4.5版本的持续时间为 2026/08/26 4.5版本更新后 - 2026/09/28 06:00」
       → 本版本开始就知道**下个版本的准确日期**（提前 33 天），不必按固定周期外推。
       注意这里的末日期取**原始值**（9/28），不减一天——它是下一版的起点。
-    - 「■玩法」段 → 高难四支的期名与日期。
+    - 「■玩法」段 → 高难四支的期名与日期（按 `●` 逐条解，一版几期就出几条）。
 
     endgame 每项 {mode, name, start_date, end_date}；异相仲裁只给期名不给日期，
     由调用方按「版本期间」补（见 pipeline）。
@@ -119,27 +127,30 @@ def parse_version_notes(text: str, subject: str) -> dict | None:
             y, mo, d, _h, _m2 = us[-1]
             result["next_version_date"] = _iso(y, mo, d)
 
-    # 「■玩法」段：高难四支
+    # 「■玩法」段：高难四支。**按 `●` 逐条解**，不是按型名 search —— 段首的说明文字里也会
+    # 出现带 `•`、却不带日期的光提名（4.6 起：「其中「混沌回忆•来生泅渡」将于…开启」），
+    # 按型名 search 会让 `.*?` 跨过 `●` 一路吃到**下一条**的日期行，把整段说明吃进期名
+    # （2026-09-29 修，见 PLAN §4）。逐条解另有一个好处：一版两期同一型名能各出一条
+    # （4.6 起有：来生泅渡 9/28 起、物竞天择 11/02 起），而按型名 search 只出第一期。
     gm = re.search(rules.GAMEPLAY_SECTION, text or "", re.S)
     endgame: list[dict] = []
     if gm:
         block = gm.group(1)
         tm = RE_ENDGAME_THEME.search(block)
         if tm:
-            # 正文写「异相仲裁•军团再临」，其余三支写「末日幻影•仙客天狼」——
-            # 这里统一只留期名，标题由 pipeline 拼成「型名·期名」（数据文件的写法）
+            # 异相仲裁那条只给期名、不给日期，期名还写在说明句的引号里而不是 `●` 条目，
+            # 所以单独认。正文写「异相仲裁•军团再临」，这里统一只留期名，标题由 pipeline
+            # 拼成「型名·期名」（数据文件的写法）
             endgame.append({"mode": "异相仲裁", "name": _strip_mode_prefix(tm.group(1))})
-        for mode in ("末日幻影", "虚构叙事", "混沌回忆"):
-            em = re.search(re.escape(mode) + r"•(.*?)\s+(\d{4})/(\d{1,2})/(\d{1,2})"
-                           r"\s+\d{1,2}:\d{2}\s*-\s*(\d{4})/(\d{1,2})/(\d{1,2})"
-                           r"\s+(\d{1,2}):(\d{2})", block)
-            if not em:
+        for seg in block.split("●")[1:]:
+            em = RE_ENDGAME_ENTRY.match(seg)
+            if not em or em.group(1) not in rules.ENDGAME_MODES:
                 continue
-            start = _iso(em.group(2), em.group(3), em.group(4))
-            end = _iso(em.group(5), em.group(6), em.group(7))
-            if int(em.group(8)) * 60 + int(em.group(9)) <= rules.MORNING_CUTOFF_MIN:
+            start = _iso(em.group(3), em.group(4), em.group(5))
+            end = _iso(em.group(6), em.group(7), em.group(8))
+            if int(em.group(9)) * 60 + int(em.group(10)) <= rules.MORNING_CUTOFF_MIN:
                 end = _subtract_day(end)
-            endgame.append({"mode": mode, "name": em.group(1).strip(),
+            endgame.append({"mode": em.group(1), "name": em.group(2).strip(),
                             "start_date": start, "end_date": end})
     result["endgame"] = endgame
     return result
