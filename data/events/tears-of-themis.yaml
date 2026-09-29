@@ -274,3 +274,29 @@
   tags:
   - 莫弈
   - SSR
+- id: tea-版本-2026-09-未定事件簿61版
+  game: tears-of-themis
+  title: 《未定事件簿》6.1 版本停服更新
+  type: 版本更新
+  start_date: '2026-09-30'
+  end_date: '2026-09-30'
+  color: '#ffffff'
+  source_url: https://www.miyoushe.com/wd/article/78513442
+- id: tea-常规-2026-09-非常假日
+  game: tears-of-themis
+  title: 「NXX-非常假日」
+  type: 常规活动
+  start_date: '2026-09-30'
+  end_date: '2026-10-17'
+  color: '#cad7e1'
+  source_url: https://www.miyoushe.com/wd/article/78469958
+- id: tea-常规-2026-09-岁悦同欢
+  game: tears-of-themis
+  title: 「岁悦同欢」
+  type: 常规活动
+  start_date: '2026-09-26'
+  end_date: '2026-10-03'
+  color: '#ded3ce'
+  source_url: https://www.miyoushe.com/wd/article/78445059
+  tags:
+  - 莫弈
