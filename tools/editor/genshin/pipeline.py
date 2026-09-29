@@ -273,8 +273,11 @@ def run():
         imgs = e.get("images") or []
         e["color"] = pastel_from_url(imgs[0]) if imgs else FALLBACK_COLOR
 
+    # 不落盘 `description`：它是活动正文整段，写进数据文件会把网页卡片撑得极长。上游的
+    # 赋值留着——`inference.resolve_version_starts` 要读正文里的「版本更新后」推起点日期，
+    # 摘掉的只是产物这一层。
     out = [
-        {k: e[k] for k in ("title", "type", "start_date", "end_date", "tags", "color", "description", "images", "post_id", "name")
+        {k: e[k] for k in ("title", "type", "start_date", "end_date", "tags", "color", "images", "post_id", "name")
          if k in e}
         for e in all_events
     ]

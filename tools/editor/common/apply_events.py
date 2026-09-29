@@ -69,8 +69,6 @@ def main(game_id: str = GAME, filename=None):
             "end_date": ex["end_date"],
             "color": ex.get("color", "#cce0f0"),
         }
-        if ex.get("description"):
-            ev["description"] = ex["description"]
         url_path = yaml_io.GAME_URL_PATH.get(game_id)
         if ex.get("post_id") and url_path:
             ev["source_url"] = f"https://www.miyoushe.com/{url_path}/article/{ex['post_id']}"

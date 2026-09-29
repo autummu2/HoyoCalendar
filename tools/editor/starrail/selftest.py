@@ -221,17 +221,17 @@ def test_notes_candidates():
           [calibrate.DEFAULT_ACTIVITY_TYPE] * 2 + ["登录福利"])
     check("候选带 pending 标记（登录福利那条不带）",
           [c.get(keys.PENDING_FIELD) for c in cands], ["总纲", "总纲", None])
-    check("登录福利候选带描述（不靠正文公告）",
-          [bool(c.get("description")) for c in cands], [False, False, True])
     check("日期不齐的不进候选（4.4 那版的命运契约•再启）",
           any(c["title"] == "「命运契约•再启」" for c in cands), False)
     # 标记必须能过产物 JSON 那道白名单。漏掉它，活动照落盘、标记却带不出去，
-    # 下一轮预筛就按「已录入」跳过它的公告正文——描述与配色永远补不上，整条路空转。
+    # 下一轮预筛就按「已录入」跳过它的公告正文——配色永远补不上，整条路空转。
     check("产物白名单带 pending", keys.PENDING_FIELD in pipeline.OUT_FIELDS, True)
+    # 描述相反：不进产物。它是正文整段，落盘会把网页卡片撑得极长。
+    check("产物白名单不带 description", "description" in pipeline.OUT_FIELDS, False)
 
 
 def test_pending_correction():
-    """总纲落盘的那条 → 它自己的公告到了：订正类型、补描述与配色、清掉标记。
+    """总纲落盘的那条 → 它自己的公告到了：订正类型、补配色、清掉标记。
 
     这里是星铁侧的用例。共用模块 `correct_from_candidates` 的完整矩阵（两条护栏、假补、
     幂等、id/日期不动…）建在 zenless/selftest.py 的 test_pending_correction 里——
@@ -243,7 +243,7 @@ def test_pending_correction():
     check("总纲落盘的样子", (landed["type"], landed.get(keys.PENDING_FIELD)),
           ("常规活动", "总纲"))
 
-    # ① 只有总纲候选再过一轮：不许动它。它自己也缺描述与配色，清了标记就等于假补
+    # ① 只有总纲候选再过一轮：不许动它。它自己也缺配色，清了标记就等于假补
     #    （标记一清，预筛就不再重抓这条活动的公告正文，那两样永远补不上）
     check("总纲候选不给自己补全", calibrate.correct_from_candidates([landed], cands), [])
     check("标记还在", landed.get(keys.PENDING_FIELD), "总纲")
@@ -252,9 +252,9 @@ def test_pending_correction():
     ann = {"title": "「超限：狂飙大奖赛」", "type": "常规活动",
            "start_date": "2026-08-26", "end_date": "2026-09-27",
            "description": "千星城全新的赛车比赛…", "color": "#fdcccc"}
-    check("公告补齐描述与配色", calibrate.correct_from_candidates([landed], [ann]),
-          ["「超限：狂飙大奖赛」 ← 公告（补齐描述与配色）"])
-    check("描述已补", landed.get("description"), ann["description"])
+    check("公告补齐配色", calibrate.correct_from_candidates([landed], [ann]),
+          ["「超限：狂飙大奖赛」 ← 公告（补齐配色）"])
+    check("公告带描述也不写回条目", landed.get("description"), None)
     check("配色已补（取色排在订正之前才算得出来）", landed.get("color"), ann["color"])
     check("标记已清", keys.PENDING_FIELD in landed, False)
     check("再跑一轮无变更（幂等）", calibrate.correct_from_candidates([landed], [ann]), [])

@@ -12,7 +12,7 @@
 
 活动**类型**取不到总纲里：实测两份总纲都没有「活动常驻说明」/「丽都纪事」段，
 也没有活动入口链接。所以总纲列出的活动先按默认类型落盘（`keys.PENDING_FIELD` 标记），
-等它自己的活动说明公告到了再由 calibrate.correct_from_candidates 把类型/描述/配色补齐
+等它自己的活动说明公告到了再由 calibrate.correct_from_candidates 把类型/配色补齐
 ——活动因此能在版本更新当天进日历，比它自己的公告早 12~35 天（见 PLAN.md §1.2）。
 标题一律取自公告自己的 subject，总纲那条走 _demote_quotes 把内层「」降级成『』。
 """
@@ -54,9 +54,12 @@ OUT_FILE = Path(__file__).resolve().parent / "extracted_zzz.json"
 # 交给 apply_events 的字段白名单。`keys.PENDING_FIELD` **必须**在里面：apply_events 靠它把
 # 「这条还缺公告才有的字段」写进数据文件，下一轮才据此必抓它的公告正文（keys.likely_recorded）
 # 并由 correct_from_candidates 补齐。漏掉它，总纲优先整条路就是空转——活动照落盘，
-# 但标记带不出去，描述与配色永远补不上（离线跑一遍 run() 才发现，已写进自检）。
+# 但标记带不出去，配色永远补不上（离线跑一遍 run() 才发现，已写进自检）。
+#
+# 白名单里**没有** `description`：它整段（活动正文）落盘会让网页卡片撑得极长，描述
+# 一律不进数据文件。
 OUT_FIELDS = ("title", "type", "start_date", "end_date", "tags", "color",
-              "description", "post_id", keys.PENDING_FIELD)
+              "post_id", keys.PENDING_FIELD)
 
 
 # ─── 抓取记账 ────────────────────────────────────────────
@@ -151,7 +154,7 @@ def _activities_from_notes(contents, versions):
     这是 §9 的「总纲优先」：活动在版本更新当天就落盘，比它自己的公告早 12~35 天。
     代价是总纲给不出类型，所以先落默认类型 + `keys.PENDING_FIELD` 标记——标记是那条路
     的开关：预筛（keys.likely_recorded）见到它就不跳过正文，抓到公告后由
-    calibrate.correct_from_candidates 把类型/描述/配色补齐并清掉标记。
+    calibrate.correct_from_candidates 把类型/配色补齐并清掉标记。
     """
     out: list[dict] = []
     for content in contents.values():
@@ -229,7 +232,6 @@ def _build_activities(posts, versions, existing) -> list[dict]:
         out.append({"title": a["title"], "type": parse.classify_activity(text, content),
                     "start_date": body.get("start_date"),
                     "end_date": body.get("end_date"),
-                    "description": body.get("description"),
                     "images": images, "post_id": a["post_id"]})
     return out
 
@@ -269,7 +271,7 @@ def _build_battle_passes(posts, versions, existing) -> list[dict]:
             continue
         body = parse.parse_activity_body(text, versions)
         e.update(start_date=body.get("start_date"), end_date=body.get("end_date"),
-                 description=body.get("description"), color=rules.COLORS["大月卡"])
+                 color=rules.COLORS["大月卡"])
         out.append(e)
     return out
 
@@ -362,7 +364,7 @@ def run():
         imgs = e.get("images") or []
         e["color"] = pastel_from_url(imgs[0]) if imgs else FALLBACK_COLOR
 
-    # 订正：用本轮候选改已有条目的**类型**，并补全总纲落盘那批缺的描述与配色。
+    # 订正：用本轮候选改已有条目的**类型**，并补全总纲落盘那批缺的配色。
     # 必须在校准之前——两者都会写 events，校准读的是订正后的结果（同一轮内可见）。
     fixes = calibrate.correct_from_candidates(events, acts)
 

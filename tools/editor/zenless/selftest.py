@@ -356,7 +356,7 @@ def test_notes_activities_match_data():
 # 但主要驱动者是本管线。
 
 def test_pending_correction():
-    """先落默认类型 + pending 标记 → 公告到了订正类型并补齐描述/配色。"""
+    """先落默认类型 + pending 标记 → 公告到了订正类型并补齐配色。"""
     # 1. 类型订正：默认类型 → 公告判出的类型
     ev = {"id": "zzz-常规-2026-09-「惊喜放映企划」", "type": "常规活动",
           "title": "「惊喜放映企划」", "start_date": "2026-09-23", "end_date": "2026-10-19"}
@@ -382,7 +382,7 @@ def test_pending_correction():
               [{"title": "「悠悠律动舞力聚会」", "type": "常规活动",
                 "start_date": "2026-07-24", "end_date": "2026-08-10"}]), [])
 
-    # 3. 待补全：补描述与配色，然后清掉标记（幂等开关）
+    # 3. 待补全：补配色，然后清掉标记（幂等开关）
     pending = {"title": "「数据悬赏-实战模拟」", "type": "常规活动",
                "start_date": "2026-10-14", "end_date": "2026-10-18",
                keys.PENDING_FIELD: "总纲"}
@@ -392,13 +392,13 @@ def test_pending_correction():
     check("待补全条目同时订正类型并补齐",
           calibrate.correct_from_candidates([pending], [full]),
           ["「数据悬赏-实战模拟」 ← 公告（type 常规活动 → 网页活动）"])
-    check("描述已补", pending.get("description"), full["description"])
+    check("公告带描述也不写回条目", pending.get("description"), None)
     check("配色已补", pending.get("color"), full["color"])
     check("标记已清（下轮不再重复处理）", keys.PENDING_FIELD in pending, False)
     check("再跑一轮无变更（幂等）",
           calibrate.correct_from_candidates([pending], [full]), [])
 
-    # 4. 只补描述、类型一致时也要有记录，否则补齐这件事在日志里看不见
+    # 4. 只补配色、类型一致时也要有记录，否则补齐这件事在日志里看不见
     plain = {"title": "「跛脚乌鸦奇探录」", "type": "常规活动",
              "start_date": "2026-10-03", "end_date": "2026-10-18",
              keys.PENDING_FIELD: "总纲"}
@@ -406,11 +406,11 @@ def test_pending_correction():
           calibrate.correct_from_candidates(
               [plain], [{"title": "「跛脚乌鸦奇探录」", "type": "常规活动",
                         "start_date": "2026-10-03", "end_date": "2026-10-18",
-                        "description": "…"}]),
-          ["「跛脚乌鸦奇探录」 ← 公告（补齐描述与配色）"])
+                        "color": "#f0e0c8"}]),
+          ["「跛脚乌鸦奇探录」 ← 公告（补齐配色）"])
 
     # 5. 假补：候选**自己也带标记**（总纲列出的那条，每轮都会再产出一条）→ 不许清标记。
-    #    总纲候选补不了描述与配图，清掉标记后预筛就不再重抓它的公告正文，永远补不上。
+    #    总纲候选补不了配色与配图，清掉标记后预筛就不再重抓它的公告正文，永远补不上。
     waiting = {"title": "「天使应援大作战」", "type": "常规活动",
                "start_date": "2026-09-09", "end_date": "2026-11-29",
                keys.PENDING_FIELD: "总纲"}
@@ -419,8 +419,10 @@ def test_pending_correction():
     check("标记保留、继续逼着抓正文", waiting.get(keys.PENDING_FIELD), "总纲")
 
     # 7. 标记必须能过产物 JSON 那道白名单——apply_events 从产物里读它。漏掉的话活动照落盘、
-    #    标记却带不出去，下一轮预筛就按「已录入」跳过它的公告正文，描述与配色永远补不上。
+    #    标记却带不出去，下一轮预筛就按「已录入」跳过它的公告正文，配色永远补不上。
     check("产物白名单带 pending", keys.PENDING_FIELD in pipeline.OUT_FIELDS, True)
+    #    描述相反：不进产物（正文整段把网页卡片撑得极长），白名单里也不该有它。
+    check("产物白名单不带 description", "description" in pipeline.OUT_FIELDS, False)
 
     # 6. 找不到对应条目（本轮新增的候选）→ 什么都不做，新增归 apply_events 管
     check("候选不在已有条目里 → 无变更",

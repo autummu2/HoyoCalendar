@@ -164,8 +164,8 @@ def correct_from_candidates(events: list[dict], candidates: list[dict]) -> list[
        动态出现得比活动公告晚，条目会先落成常规活动。
 
     2. **补全待补全的条目**（带 `keys.PENDING_FIELD` 标记的，即从总纲落盘的那批）：
-       补 `description` 与 `color`（总纲只有一两行简介、且活动段没有配图，这两样只有
-       公告才有），然后清掉标记。标记是幂等的开关：清掉后不再重复处理。
+       补 `color`（总纲只有一两行简介、且活动段没有配图，配色只有公告才有），然后清掉
+       标记。标记是幂等的开关：清掉后不再重复处理。
 
        ⚠️ 候选的 `color` 是**管线取色那一步**才填上的，所以调用方必须**先取色再调本函数**
        （取色要排在日期闸之后，免得给马上要丢掉的条目白下载封面图）。顺序错了不会报错，
@@ -174,7 +174,7 @@ def correct_from_candidates(events: list[dict], candidates: list[dict]) -> list[
        清标记的前提是**候选本身不缺东西**——带标记的候选（总纲列出的那批，`pending` 值
        就是它落的）一律跳过：总纲那条只有名字与日期，拿它补全只会白清标记、补不上字段，
        而标记一清，下一轮预筛（keys.likely_recorded）就按「已录入」跳过它的公告正文，
-       描述与配图再也补不上了。缺口宁可留着（继续重抓正文），不能假补。
+       配色与配图再也补不上了。缺口宁可留着（继续重抓正文），不能假补。
 
     **不动 start_date / end_date / id**：
     - 日期：总纲与公告实测逐条一致（15/15），冲突时以先落盘的总纲为准。日期还在身份主键里，
@@ -192,7 +192,7 @@ def correct_from_candidates(events: list[dict], candidates: list[dict]) -> list[
         if c.get(keys.PENDING_FIELD):
             # 「自己还缺东西的候选」不是能补全的那一条（见上面第 2 点）。
             # 总纲列出的活动每轮都会再产出一条这样的候选，它匹配得上待补全的既有条目，
-            # 但补不了描述与配图——放它过去就会假补。
+            # 但补不了配色与配图——放它过去就会假补。
             continue
         e = keys.find_duplicate(c, events)
         if e is None:
@@ -202,13 +202,12 @@ def correct_from_candidates(events: list[dict], candidates: list[dict]) -> list[
             diffs.append(f"type {e.get('type')} → {c['type']}")
             e["type"] = c["type"]
         if e.get(keys.PENDING_FIELD):
-            for field in ("description", "color"):
-                want = c.get(field)
-                if want and e.get(field) != want:
-                    e[field] = want
+            want = c.get("color")
+            if want and e.get("color") != want:
+                e["color"] = want
             e.pop(keys.PENDING_FIELD, None)
             if not diffs:
-                diffs.append("补齐描述与配色")
+                diffs.append("补齐配色")
         if diffs:
             changes.append(f"{e.get('title')} ← 公告（{'；'.join(diffs)}）")
     return changes

@@ -12,7 +12,7 @@
 只是表里不套固定周期：相邻两次更新日相减就是版本长度。
 
 活动那一整段走「总纲优先」（PLAN.md §1.2）：活动在版本更新当天先以默认类型 + pending
-标记落盘，等它自己的公告发出来再由 correct_from_candidates 订正类型、补描述与配色。
+标记落盘，等它自己的公告发出来再由 correct_from_candidates 订正类型、补配色。
 run() 里因此有两条硬顺序——取色→订正→校准，理由写在取色那一步的注释里。
 """
 
@@ -55,9 +55,12 @@ OUT_FILE = Path(__file__).resolve().parent / "extracted_hsr.json"
 # 交给 apply_events 的字段白名单。`keys.PENDING_FIELD` **必须**在里面：apply_events 靠它把
 # 「这条还缺公告才有的字段」写进数据文件，下一轮才据此必抓它的公告正文（keys.likely_recorded）
 # 并由 correct_from_candidates 补齐。漏掉它，总纲优先整条路就是空转——活动照落盘，
-# 但标记带不出去，描述与配色永远补不上。
+# 但标记带不出去，配色永远补不上。
+#
+# 白名单里**没有** `description`：它整段（活动正文）落盘会让网页卡片撑得极长，描述
+# 一律不进数据文件。
 OUT_FIELDS = ("title", "type", "start_date", "end_date", "tags", "color",
-              "description", "post_id", keys.PENDING_FIELD)
+              "post_id", keys.PENDING_FIELD)
 
 
 # ─── 抓取记账 ────────────────────────────────────────────
@@ -343,7 +346,7 @@ def _build_activities(posts, versions, existing) -> list[dict]:
         waiting = False
         for body in blocks:
             e = {"title": f"「{body['name']}」", "type": "常规活动",
-                 "post_id": a["post_id"], "description": body.get("description")}
+                 "post_id": a["post_id"]}
             if body.get("version_period") or body.get("version_end_before"):
                 # 时段挂在版本上（版本期间 / 版本结束前）的就是版本大活动——沿用既有判据
                 e["type"] = "版本大活动"
@@ -368,7 +371,7 @@ def _activities_from_notes(notes, text, versions) -> list[dict]:
     这是 PLAN.md §1.2 的「总纲优先」：活动在版本更新当天就落盘，比它自己的公告早 15 天。
     代价是总纲给不出类型，所以先落默认类型 + `keys.PENDING_FIELD` 标记——标记是那条路的
     开关：预筛（keys.likely_recorded）见到它就不跳过正文，抓到公告后由
-    calibrate.correct_from_candidates 把类型/描述/配色补齐并清掉标记。
+    calibrate.correct_from_candidates 把类型/配色补齐并清掉标记。
 
     **只收当前版本那一份总纲**（2026-09-21 定）：窗口里通常还留着上一版的总纲，但它的活动
     要么已经落盘、要么永远不会落盘，而从它产候选有实测风险——4.4 的总纲把那条联动活动写作
@@ -383,11 +386,9 @@ def _activities_from_notes(notes, text, versions) -> list[dict]:
             continue     # 日期解不出来的不进候选（与日期闸同一判据）
         e = {"title": a["title"], "type": a.get("type") or calibrate.DEFAULT_ACTIVITY_TYPE,
              "start_date": a["start_date"], "end_date": a["end_date"]}
-        if a.get("description"):
-            e["description"] = a["description"]
         if not a.get("type"):
             # 类型还要等活动自己的公告来订正，才打标记。登录福利那条（巡星之礼）没有自己的
-            # 公告——解析器已从总纲本文判出类型与描述，**不能**打标记：标记没人来清，
+            # 公告——解析器已从总纲本文判出类型，**不能**打标记：标记没人来清，
             # 会永久留在数据文件里，还要让预筛每轮去抓一篇不存在的正文。
             e[keys.PENDING_FIELD] = "总纲"
         out.append(e)
@@ -429,7 +430,6 @@ def _build_battle_passes(posts, existing) -> list[dict]:
             continue
         body = parse.parse_activity_body(text)
         e["start_date"], e["end_date"] = body.get("start_date"), body.get("end_date")
-        e["description"] = body.get("description")
         e["color"] = rules.COLORS["大月卡"]
         out.append(e)
     return out
@@ -516,8 +516,8 @@ def run():
         imgs = e.get("images") or []
         e["color"] = pastel_from_url(imgs[0]) if imgs else FALLBACK_COLOR
 
-    # 订正：类型可能后到——正文里没有「X.Y版本期间」时先落成常规活动、总纲落盘的还缺描述
-    # 与配色，都要用本轮候选补。只可能往版本大活动方向订正，反向被 DEFAULT_ACTIVITY_TYPE
+    # 订正：类型可能后到——正文里没有「X.Y版本期间」时先落成常规活动、总纲落盘的还缺配色，
+    # 要用本轮候选补。只可能往版本大活动方向订正，反向被 DEFAULT_ACTIVITY_TYPE
     # 护栏挡住。必须在校准之前：版本大活动的主键含类型，类型改对了校准才查得到来源。
     fixes = calibrate.correct_from_candidates(events, acts)
 
