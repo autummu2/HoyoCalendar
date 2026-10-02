@@ -301,6 +301,10 @@ def find_update_previews(posts: list[dict]) -> list[dict]:
 
 RE_BANNER_SHARED = re.compile(r"本期活动跃迁时间为(.*?)包含如下内容", re.S)
 RE_BANNER_POOL_STAR = re.compile(r"角色活动跃迁期间，\s*限定5星角色\s*[「『]([^」』]+)[」』]")
+# 无 sentinel 排版里的 5★ 段：紧跟在「限定5星角色」后面的那一串书名号。不能按
+# 「与限定5星光锥」截断——米游社偶尔在「与」后插空格（4.6 其一写作 `与 限定5星光锥`），
+# 连接词一失配就把同一句的 4★ 角色与 4★ 光锥也收进标题。
+RE_BANNER_5STAR_RUN = re.compile(r"限定5星角色\s*((?:[「『][^」』]+[」』]\s*)+)")
 
 
 def is_banner(subject: str) -> bool:
@@ -318,7 +322,9 @@ def parse_banner_body(text: str) -> list[dict]:
       5 星取所有「角色活动跃迁期间，限定5星角色「X」」。其一/其二都是这种。
     - 没有该句 → 开头段落逐句分组，每句给出自己的一组 5 星和「跃迁时间为 …」。
       4.4 其二这种含「铭心之萃」返场池的排版，返场池 8/05 开、首发池 7/15 开，
-      必须拆成两条，否则日期只能二选一。
+      必须拆成两条，否则日期只能二选一。5 星按「限定5星角色」这个标签取（见
+      RE_BANNER_5STAR_RUN），不按连接词「与限定5星光锥」截——4.6 其一那里
+      「与」后多一个空格，截不断，4★ 就跟着进了标题。
 
     拼出的标题与数据文件里既有的条目**逐字一致**（selftest.py 断言），
     所以这些卡池条目不需要任何日期/标题推理。
@@ -343,8 +349,10 @@ def parse_banner_body(text: str) -> list[dict]:
     for sent in intro.split("。"):
         if "限定5星角色" not in sent or "跃迁时间为" not in sent:
             continue
-        before = sent.split("与限定5星光锥")[0]
-        names = [n for n in RE_ANY_NAME.findall(before)]
+        m5 = RE_BANNER_5STAR_RUN.search(sent)
+        if not m5:
+            continue
+        names = [n for n in RE_ANY_NAME.findall(m5.group(1))]
         if not names:
             continue
         start, end = parse_period(sent.split("跃迁时间为", 1)[1])
