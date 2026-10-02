@@ -475,3 +475,20 @@
   end_date: '2026-11-02'
   color: '#cfc8e4'
   source_url: https://www.miyoushe.com/ys/article/78469941
+- id: gi-幻想真境剧诗-幻想真境剧诗1101
+  game: genshin-impact
+  title: 幻想真境剧诗1101
+  type: 高难挑战
+  start_date: '2026-11-01'
+  end_date: '2026-11-30'
+  color: '#7ba6f4'
+  tags:
+  - 自动推理
+- id: gi-常规-2026-10-绮星盛会
+  game: genshin-impact
+  title: 「绮星盛会」
+  type: 常规活动
+  start_date: '2026-10-01'
+  end_date: '2026-11-03'
+  color: '#cce0f0'
+  source_url: https://www.miyoushe.com/ys/article/78324484
