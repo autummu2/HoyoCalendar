@@ -484,11 +484,23 @@
   color: '#7ba6f4'
   tags:
   - 自动推理
-- id: gi-常规-2026-10-绮星盛会
+- id: gi-版本更新-《原神》7.2 版本停服更新
   game: genshin-impact
-  title: 「绮星盛会」
-  type: 常规活动
-  start_date: '2026-10-01'
-  end_date: '2026-11-03'
-  color: '#cce0f0'
-  source_url: https://www.miyoushe.com/ys/article/78324484
+  title: 《原神》7.2 版本停服更新
+  type: 版本更新
+  start_date: '2026-11-04'
+  end_date: '2026-11-04'
+  color: '#ffffff'
+  tags:
+  - 自动推理
+  - 待确认版本
+- id: gi-前瞻直播-《原神》7.2 版本前瞻特别节目
+  game: genshin-impact
+  title: 《原神》7.2 版本前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-10-24'
+  end_date: '2026-10-24'
+  color: '#7dc4ea'
+  tags:
+  - 自动推理
+  - 待确认版本
