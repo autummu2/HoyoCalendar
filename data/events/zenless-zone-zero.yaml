@@ -398,3 +398,11 @@
   end_date: '2026-09-08'
   color: '#cce0f0'
   pending: 总纲
+- id: zzz-前瞻-2026-10-绝区零33版本重
+  game: zenless-zone-zero
+  title: 《绝区零》3.3 版本「重返天空的旅程」前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-10-09'
+  end_date: '2026-10-09'
+  color: '#cdede6'
+  calibrated: B站前瞻公告
