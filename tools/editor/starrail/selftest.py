@@ -390,6 +390,40 @@ def test_activity_audit_waiting():
          body_cache.AUDITED_FILE) = saved
 
 
+def test_permanent_drop():
+    """永久开放的常驻内容不上日历，而且不该让这篇公告每轮再读一遍。
+
+    「星际碰碰好搭档」的时段段写 `▌活动时间 2026/09/28 4.6版本更新后永久开放`（只有一个
+    绝对日期）。原先它靠「解不出完整时段」被日期闸**顺带**丢掉——顺带的代价是那条路径会
+    把它记成 waiting，于是 09-29 / 10-02 / 10-06 三轮都白抓了一次正文。这里钉住两件事：
+    4.6 的起止**在表里**也不落盘（不是靠缺日期挡的），以及读完不再 waiting。
+    """
+    import tempfile
+    from pathlib import Path as _Path
+
+    d = load("act_pengpeng")
+    pid = d["post_id"]
+    tmp = _Path(tempfile.mkdtemp(prefix="hsr-permanent-"))
+    saved = (body_cache.CACHE_DIR, body_cache.BODIES_DIR, body_cache.AUDITED_FILE)
+    body_cache.CACHE_DIR, body_cache.BODIES_DIR = tmp, tmp / "bodies"
+    body_cache.AUDITED_FILE = tmp / "audited.json"
+    orig_find, orig_fetch = pipeline.parse.find_activities, pipeline._fetch_text
+    pipeline.parse.find_activities = lambda posts: [
+        {"title": "「星际碰碰好搭档」", "name": parse._name_of(d["subject"]),
+         "post_id": pid, "created_at": 0}]
+    pipeline._fetch_text = lambda post_id: (d["text"], ["u"])
+    try:
+        versions = _versions("hsr46_version_notes")
+        check("4.6 起止都在表里", versions.get("4.6"), ("2026-09-28", "2026-11-10"))
+        check("永久开放的块不产出条目", pipeline._build_activities([], versions, []), [])
+        check("永久开放不是「等日期」→ 不置 waiting，下轮不再读这篇",
+              (body_cache.audit_state(pid) or {}).get("waiting"), False)
+    finally:
+        pipeline.parse.find_activities, pipeline._fetch_text = orig_find, orig_fetch
+        (body_cache.CACHE_DIR, body_cache.BODIES_DIR,
+         body_cache.AUDITED_FILE) = saved
+
+
 # ─── 卡池：标题必须与数据文件逐字一致 ─────────────────────
 
 def test_banners():
@@ -456,6 +490,23 @@ def test_activity_bodies():
     # 同时当成起止）。判据与总纲的 _item_period 同一条。
     one = parse.parse_activity_body("▌活动时间 2026/09/01 04:00\n▌参与条件 无")
     check("单日期段不落成一天的活动", (one.get("start_date"), one.get("end_date")), (None, None))
+
+    # 永久开放 = 常驻内容，不上日历（与 genshin 同一条判据）。「星际碰碰好搭档」的时段段
+    # 写 `▌活动时间 2026/09/28 4.6版本更新后永久开放`——只有一个绝对日期，原先靠「解不出
+    # 完整时段」被日期闸顺带丢掉，于是每轮白抓一次正文。
+    d = load("act_pengpeng")
+    got = parse.parse_activity_body(d["text"])
+    check("永久开放 → permanent、不给日期",
+          (got.get("permanent"), got.get("start_date"), got.get("end_date")),
+          (True, None, None))
+
+    # 判据只读**时段段本身**：同一篇里子玩的 `■开放时间 …永久开放` 不算数——那段说的是别的
+    # 玩法（「星际幻宠」乐园），这条活动自己的时段仍是版本期间，认错了就会静默少一条。
+    mixed = parse.parse_activity_body(
+        "▌「星际潮玩」抽取 活动说明\n■活动时间 4.6版本期间 ■ 抽取概率 略\n"
+        "▌「星际幻宠」乐园\n■开放时间 2026/09/28 4.6版本更新后永久开放\n■参与条件 无")
+    check("段外的「永久开放」不误伤（时段段本身是版本期间）",
+          (mixed.get("permanent"), mixed.get("version_period")), (None, "4.6"))
 
 
 # ─── 更新预告 ────────────────────────────────────────────
@@ -579,7 +630,7 @@ def test_matches_existing():
 def main():
     for fn in (test_version_notes, test_version_table, test_notes_activities, test_notes_candidates,
                test_pending_correction, test_body_cache_and_audit,
-               test_activity_audit_waiting, test_banners,
+               test_activity_audit_waiting, test_permanent_drop, test_banners,
                test_activity_bodies,
                test_update_preview, test_bilibili, test_classification,
                test_matches_existing):

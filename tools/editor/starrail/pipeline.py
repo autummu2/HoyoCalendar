@@ -345,6 +345,11 @@ def _build_activities(posts, versions, existing) -> list[dict]:
         blocks = parse.parse_activity_bodies(text, a["name"])
         waiting = False
         for body in blocks:
+            if body.get("permanent"):
+                # 永久开放的常驻内容不上日历（parse 已判出，与 genshin 同一条判据）。
+                # 这里直接丢，**不置 waiting**——它不是「日期还没到」，每轮重抓一遍正文
+                # 只会白费一次请求（原先就是这么被日期闸顺带丢掉、又每轮再抓一次）。
+                continue
             e = {"title": f"「{body['name']}」", "type": "常规活动",
                  "post_id": a["post_id"]}
             if body.get("version_period") or body.get("version_end_before"):

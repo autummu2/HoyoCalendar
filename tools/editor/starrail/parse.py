@@ -424,6 +424,7 @@ def parse_activity_body(text: str) -> dict:
     周期表补（星铁版本周期不固定，只能靠相邻两次更新日相减，见 rules.py）：
       `X.Y版本期间`   → version_period='X.Y'    两端都取那一版
       `X.Y版本结束前` → version_end_before='X.Y' 终点取那一版的终点，起点用段内的绝对日期
+      `永久开放`      → permanent=True          常驻内容，不上日历
     那一版不在版本周期表里时**不猜**：起点照给、终点留空，由管线的日期闸丢掉整条。写死或
     按 42 天外推都会落一段错日期，宁可让这条等它自己的说明。
     """
@@ -432,6 +433,11 @@ def parse_activity_body(text: str) -> dict:
     if not m:
         return result
     seg = m.group(2)
+    if rules.PERMANENT_KEYWORD in seg:
+        # 判据只看**时段段本身**，段外的「永久开放」（如同一篇里子玩法的 `■开放时间`）
+        # 不算——那一段说的是别的玩法，这条活动自己的时段仍是版本期间。
+        result["permanent"] = True
+        return result
     vm = RE_VERSION_PERIOD.search(seg)
     if vm:
         result["version_period"] = vm.group(1)
