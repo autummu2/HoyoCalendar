@@ -53,19 +53,6 @@
   - 左然
   - 莫弈
   - 陆景和
-- id: tea-常规-2026-08-七夕快乐丨登录接
-  game: tears-of-themis
-  title: 七夕快乐丨登录接收来自他的特别语音电话
-  type: 常规活动
-  start_date: '2026-08-19'
-  end_date: '2026-08-21'
-  color: '#feeded'
-  description: 心动诉密语，雀跃度佳期
-  tags:
-  - 夏彦
-  - 左然
-  - 莫弈
-  - 陆景和
 - id: tea-卡池-2026-08-陆景和彤心欲眠
   game: tears-of-themis
   title: 陆景和SSS【彤心欲眠】
@@ -290,16 +277,6 @@
   end_date: '2026-10-17'
   color: '#cad7e1'
   source_url: https://www.miyoushe.com/wd/article/78469958
-- id: tea-常规-2026-09-岁悦同欢
-  game: tears-of-themis
-  title: 「岁悦同欢」
-  type: 常规活动
-  start_date: '2026-09-26'
-  end_date: '2026-10-03'
-  color: '#ded3ce'
-  source_url: https://www.miyoushe.com/wd/article/78445059
-  tags:
-  - 莫弈
 - id: tea-卡池-2026-10-陆景和融雪限时复
   game: tears-of-themis
   title: 陆景和SSR【融雪】限时复刻
