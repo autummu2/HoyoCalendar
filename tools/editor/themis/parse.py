@@ -62,10 +62,20 @@ def big_event_label(text: str) -> str | None:
     return m.group(1) if m else None
 
 
+def is_voice_call(subject: str) -> bool:
+    """语音电话类帖（`…专属语音电话`）→ 不上日历（RULES §2.2）。
+
+    登录即领一通电话，游戏里没有可参与的内容，所以整个品类不录。按**整条标题**判，
+    不看正文 —— 这类帖的正文与标题说的是同一件事，而标题一定点出「语音电话」。
+    """
+    return rules.VOICE_CALL_KEYWORD in (subject or "")
+
+
 def classify(subject: str, text: str) -> str | None:
     """一篇帖子属于哪一类；返回 None = 丢弃（不上日历）。
 
-    顺序即 RULES §2.2 的决策树：第三关（复刻二分）→ 第四关（版本大活动标签）→ 归类。
+    顺序即 RULES §2.2 的决策树：语音电话一票否决 → 第三关（复刻二分）→ 第四关
+    （版本大活动标签）→ 归类。
 
     ⚠️ **「思绪帖」不在判据里**：`…全新◯◯SSR思绪【◯◯】` 这类新卡展示帖按旧稿要单独
     挡一次，但实测它们**正文里都没有完整时段**（`9月30日更新后` 这类相对写法解不出
@@ -74,6 +84,11 @@ def classify(subject: str, text: str) -> str | None:
     **有完整时段才进候选**（在 pipeline.collect 里）。
     """
     topic, sub = split_subject(subject)
+
+    # 一票否决：语音电话类不上日历。放在最前面 —— 它只看标题、与活动名无关，
+    # 后面那几关（复刻二分 / 大活动标签 / 归类）都轮不到它。
+    if is_voice_call(subject):
+        return None
 
     # 第三关：往期复刻要二分 —— 女神之影是卡池，活动系列/礼包/商城上架不上日历
     if topic == rules.REPRINT_TOPIC:

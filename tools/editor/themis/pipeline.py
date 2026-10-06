@@ -112,7 +112,7 @@ def collect(news_posts: list[dict], version_posts: list[dict], body_of,
     用来做「已录入就不取正文」的预筛（省正文请求，正对着米游社风控）。
 
     漏斗（RULES §2.2）：⓪ 预筛：帖子 id 已录入（不取正文）→ ① 标题负向名单（不取正文）
-    → ② 正文解不出完整时段就丢 → ③ 复刻二分（礼包复刻丢）→ ④ 复合标签判版本大活动
+    → ② 正文解不出完整时段就丢 → ③ 语音电话 / 复刻里的礼包复刻丢 → ④ 复合标签判版本大活动
     → 去重（类型取并集）。
 
     预筛按**帖子 id** 认。另三端按标题认（`keys.likely_recorded`），未定这条路走不通：
@@ -138,7 +138,11 @@ def collect(news_posts: list[dict], version_posts: list[dict], body_of,
             continue
         etype = parse.classify(subject, text)
         if etype is None:
-            _note(subject, "丢弃", "礼包复刻（活动系列/礼包，不上日历）")
+            # 两条「游戏内但不上日历」的判据，日志里分开写，免得看日志时以为全是被
+            # 「活动系列/礼包/上架」挡的（那是复刻二分那一支）
+            why = ("语音电话（登录即领，不上日历）" if parse.is_voice_call(subject)
+                   else "礼包复刻（活动系列/礼包，不上日历）")
+            _note(subject, "丢弃", why)
             continue
         start, end = parse.parse_period(text)
         if not (start and end):

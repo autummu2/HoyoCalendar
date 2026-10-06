@@ -44,8 +44,11 @@ def check(label: str, got, want):
 
 NEWS = load("tea_news")                 # 资讯栏 50 条（含正文，2026-09-25 11:00 的快照）
 VERSION_POSTS = load("tea_version_posts")   # 公告栏 45 条（只有标题与发布时间）
-# 快照之后才出现的一篇（主题是往期复刻、内容是商城上架），单独放：夹具保持「同一时刻的窗口」
+# 快照之后才出现的两篇，单独放：夹具保持「同一时刻的窗口」
+#   - 商城上架（主题是往期复刻，内容是礼包）→ 第三关丢
+#   - 语音电话（莫弈生日）→ 语音电话判据丢（2026-10-02 裁定）
 SHOP = load("tea_shop_reprint")
+VOICE = load("tea_voice_call")
 BODY = {str(p["post_id"]): p["text"] for p in NEWS}
 POST = {p["subject"]: p for p in NEWS}
 
@@ -161,6 +164,16 @@ def test_classify():
     check("商城上架帖丢弃", parse.classify(SHOP["subject"], SHOP["text"]), None)
     check("商城上架帖有完整时段（所以必须靠判据挡）",
           parse.parse_period(SHOP["text"]), ("2026-09-30", "2026-10-17"))
+
+    # 语音电话：`岁悦同欢丨莫弈生日专属语音电话`（9/26~10/3）。登录即领一通电话，
+    # 游戏里没有可参与的内容 ⇒ 不录（2026-10-02 裁定）。同样有完整时段，第二道闸拦不住。
+    check("语音电话帖丢弃", parse.classify(VOICE["subject"], VOICE["text"]), None)
+    check("语音电话帖有完整时段（所以必须靠判据挡）",
+          parse.parse_period(VOICE["text"]), ("2026-09-26", "2026-10-03"))
+    # 同类的七夕帖（8/19~8/21，已从数据文件里删掉）：判据只看标题，**不必取正文**
+    # —— 它主题也以「快乐」结尾，但语音电话这一票否决排在节日福利归类之前。
+    check("七夕语音电话帖丢弃（不取正文也能判）",
+          parse.classify("七夕快乐丨登录接收来自他的特别语音电话", ""), None)
 
     # 标签判据本身：`◯◯主题活动「◯◯」` 命中，`限时活动「◯◯」` / `◯◯生日活动「◯◯」` 不命中
     check("复合标签命中", parse.big_event_label(
