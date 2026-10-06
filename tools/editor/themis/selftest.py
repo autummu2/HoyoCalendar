@@ -427,9 +427,10 @@ def test_identity():
     check("同其一期能认出", keys.find_duplicate({**card}, [card], GAME)["start_date"],
           "2026-09-03")
 
-    # 日期兜底的口径按端点（keys.EXACT_FALLBACK_GAMES）：
-    #   未定不接 calibrate ⇒ 精确口径，只认同名同起日或同源帖，没有 ±7 天的窗口
+    # 日期兜底的**日期**那一支按端点分（keys.EXACT_FALLBACK_GAMES）：
+    #   未定不接 calibrate ⇒ 只认同名同起日，没有 ±7 天的窗口
     #   三端日期会被校准改写 ⇒ 仍是 ±7 天
+    # 与日期无关的**同源帖**那一支四端共用（2026-10-06 起）
     act = {"type": "常规活动", "title": "「青葱寄愿」", "start_date": "2026-08-27"}
     moved = {**act, "start_date": "2026-08-29"}
     # ⚠️ 代价就在这里：同名、日期被订正过、又没有同源帖时会插一条**可见的重复**。
@@ -444,6 +445,11 @@ def test_identity():
           "2026-08-27")
     check("同源帖判据不跨活动",
           keys.find_duplicate({**moved, "post_id": "1"}, [{**act, "post_id": "2"}], GAME), None)
+    # 2026-10-06 放宽：同源帖那一支**四端共用**（原先只有未定认）。原神侧踩到的是
+    # 绮星盛会——同一篇公告被 B站网页子活动的窗口改了起点，差 8 天，±7 天窗口兜不住。
+    check("三端也认同源帖（差 8 天照样认回）",
+          keys.find_duplicate({**moved, **post}, [{**act, **post}], "genshin-impact")["start_date"],
+          "2026-08-27")
     # 两条同名不同期的活动（9/17 拼图 / 9/20 本体）在精确口径下互不吞并
     puzzle = {"type": "常规活动", "title": "「岁悦同欢·莫弈篇」生日拼图",
               "start_date": "2026-09-17"}
