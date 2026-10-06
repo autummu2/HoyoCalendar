@@ -8,7 +8,7 @@
   停服更新公告（总纲）  版本更新日、版本终点、高难期数、**活动日期的相对写法**
   活动公告（各自）      标题、类型、日期、描述、配图
   限时频段公告          卡池标题（限定S级代理人名只在正文里）与日期
-  B站官方账号           前瞻直播日期（米游社不发前瞻预告）
+  B站官方账号           前瞻直播日期（米游社把它发在资讯栏，本管线抓的公告栏里没有）
 
 活动**类型**取不到总纲里：实测两份总纲都没有「活动常驻说明」/「丽都纪事」段，
 也没有活动入口链接。所以总纲列出的活动先按默认类型落盘（`keys.PENDING_FIELD` 标记），
@@ -321,9 +321,11 @@ def run():
               f"（本版 {notes.get('period_days')} 天）"
               f"，高难期数 {notes.get('endgame_counts')}")
 
-    # ② B站动态：前瞻直播（米游社不发前瞻预告）
+    # ② B站动态：前瞻直播。米游社其实也发前瞻预告，但发在**资讯栏**（`type=3`），
+    # 而本管线抓的是公告栏（`type=1`）——列表里根本没有它。B站那条动态与米游社正文
+    # 逐字相同，所以不另开一条抓取线，取 B站。
     dyn = bilibili.fetch_dynamics(rules.BILI_UID, limit=rules.DYN_LIMIT)
-    lives = parse.find_livestreams(dyn)
+    lives = bilibili.find_livestreams(dyn)
 
     acts = (_build_activities(posts, versions, events)
             + _activities_from_notes(contents, versions))

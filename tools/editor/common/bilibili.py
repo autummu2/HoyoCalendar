@@ -1,7 +1,8 @@
 """B站动态抓取 — 从米哈游官方账号动态获取公告栏拿不到的信息。
 
 用途（见 tools/editor/genshin/RULES.md）：
-- 前瞻直播时间、版本名（米游社公告栏没有前瞻公告）
+- 前瞻直播时间、版本名（米游社公告栏没有前瞻公告；绝区零把前瞻预告发在**资讯栏**，
+  各管线抓的是公告栏，所以它也只能从 B站取）
 - 卡池日期（米游社卡池公告是图片，读不到文字）
 
 接口为 B站新版动态流 API（x/polymer/web-dynamic/v1/feed/space）。
@@ -171,32 +172,43 @@ def _resolve_year(month: int, day: int, pub_ts) -> str | None:
     return None
 
 
+# 前瞻预告的判据：**「前瞻特别节目 … 将于 X月X日」这层结构**，不认具体动词。
+# 措辞逐版本在变——原神 7.0/7.1 与绝区零 3.2 写「正式开启」，绝区零 3.3 改叫「正式开播」
+# （2026-10-06 实测），按动词列白名单迟早要漏；而「回顾长图」里偏偏有「开启」「即将」
+# （星铁 4.6 实测：「…全新活动即将上线，欢迎…开启新的冒险旅途」），拿动词当判据两头不讨好。
+# 结构上的差别只有一处：预告写明**未来的**直播日子，回顾写「现已结束」，前瞻当天那条
+# 写「将于今晚19:30」（没有月日）。三端 420 条动态实测：4 条预告全收（含旧判据漏掉的
+# 绝区零 3.3），7 条回顾 / 当天那条 / 节目本体全挡住。星铁 4.6 那条预告写「将于2026年
+# 9月20日…正式播出」（带年份），由星铁自己的解析处理，不走这里。
+RE_PREVIEW = re.compile(r"前瞻特别节目[^。]{0,40}?将于\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日")
+
+
 def parse_livestream(text: str, pub_ts=None) -> dict | None:
-    """从前瞻预告动态文本提取 {version, name, date}。
+    """从前瞻预告动态文本提取 {version, name, date}；不是预告则 None。
 
     匹配示例：
       #原神7.1版本前瞻特别节目# 《原神》7.1版本「往冥府的安魂歌」前瞻特别节目
       将于9月12日（本周六）晚20:00正式开启。
-    仅识别「预告公告」（含「开启」）；前瞻结束后的回顾长图、录播视频等
-    虽也含「前瞻特别节目」，但不算预告公告，返回 None。
+      《绝区零》3.3版本「重返天空的旅程」前瞻特别节目，将于10月9日 19:30正式开播！
+
+    日期取自判据命中的那处「将于X月X日」，不再全文搜第一个月日：预告正文里先出现的
+    日子未必是直播日。月日非法时不落 date 键，由调用方当「这条没日期」处理。
     """
-    if "前瞻特别节目" not in text or "开启" not in text:
+    m = RE_PREVIEW.search(text or "")
+    if not m:
         return None
     result: dict = {}
     # 版本号：7.1版本
-    m = re.search(r"(\d+\.\d+)\s*版本", text)
-    if m:
-        result["version"] = m[1]
+    mm = re.search(r"(\d+\.\d+)\s*版本", text)
+    if mm:
+        result["version"] = mm[1]
     # 版本名：书名号内
-    m = re.search(r"[「『]([^」』]{2,40})[」』]", text)
-    if m:
-        result["name"] = m[1]
-    # 前瞻日期：X月X日（月日非法时不落 date 键，当「这条没日期」处理）
-    m = re.search(r"(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
-    if m:
-        d = _resolve_year(int(m[1]), int(m[2]), pub_ts)
-        if d:
-            result["date"] = d
+    mm = re.search(r"[「『]([^」』]{2,40})[」』]", text)
+    if mm:
+        result["name"] = mm[1]
+    d = _resolve_year(int(m[1]), int(m[2]), pub_ts)
+    if d:
+        result["date"] = d
     return result
 
 

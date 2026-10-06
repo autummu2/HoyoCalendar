@@ -216,18 +216,40 @@ def test_endgame_grid():
 
 # ─── B站前瞻 ─────────────────────────────────────────────
 
-def test_bilibili():
-    """前瞻复用 common.bilibili.parse_livestream——绝区零的写法（「X月X日 …正式开启」，
-    不带年份）跟原神一模一样，不用另写一个；只多一道「必须带具体月日」的闸。
+# 星铁 4.6 的**回顾长图**动态原文（2026-10-06 抓的实时快照）。它同时含「前瞻特别节目」
+# 「开启」「即将」——旧判据（「含『开启』即算预告」）会把它当预告收下，而它写的是
+# 「现已结束」，日期只有兑换码失效日。这里留着它，是为了让判据的非动词化有个反例钉住。
+HSR_REVIEW = """#崩坏星穹铁道# #月升之前与兽共舞#
 
-    夹具里三条动态都含「前瞻特别节目」：预告（带 8月28日）、前瞻当天那条
-    「将于今晚19:30开启！」、以及前瞻结束后的节目本体。只有第一条该被收下。
+《崩坏：星穹铁道》4.6版本「月升之前，与兽共舞」前瞻特别节目回顾长图
+
+《崩坏：星穹铁道》4.6版本「月升之前，与兽共舞」前瞻特别节目现已结束，全新角色、全新场景、全新活动即将上线，欢迎各位届时登陆星穹列车，开启新的冒险旅途！
+
+本次特别节目中的兑换码将于2026年9月21日23:59:59失效，记得尽快兑换哦~
+
+点击下方图片，看看这次特别节目都讲了什么内容帕！
+"""
+
+
+def test_bilibili():
+    """前瞻的判据是 common.bilibili.RE_PREVIEW 里那层结构——**「前瞻特别节目 … 将于
+    X月X日」**，不认动词：3.2 写「正式开启」，3.3 改叫「正式开播」（实测），而回顾长图
+    里偏偏有「开启」。见 HSR_REVIEW 的反例。
+
+    夹具三条 3.2 动态都含「前瞻特别节目」：预告（写 8月28日）、前瞻当天那条
+    「将于今晚19:30开启！」（没有月日）、以及前瞻结束后的节目本体。只有第一条该被收下。
     """
     items = load("bili_zzz")
     check("含前瞻字样的动态条数", len([d for d in items if "前瞻特别节目" in d["text"]]), 3)
     check("B站前瞻日期", [(l["version"], l["name"], l["date"])
-                        for l in parse.find_livestreams(items)],
+                        for l in bilibili.find_livestreams(items)],
           [("3.2", "她与她的隐秘往事", "2026-08-28")])
+    # 3.3 的预告（写法改成「正式开播」，旧判据漏掉的那条）
+    check("3.3 前瞻（开播）", [(l["version"], l["name"], l["date"])
+                            for l in bilibili.find_livestreams(load("bili_zzz_33"))],
+          [("3.3", "重返天空的旅程", "2026-10-09")])
+    # 反面：回顾长图不是预告（含「开启」但没写未来的直播日）
+    check("回顾长图不算预告", bilibili.parse_livestream(HSR_REVIEW, 1789907100), None)
 
 
 # ─── 交叉核对：本轮会产出的条目 vs 数据文件里的已有条目 ────
@@ -256,7 +278,7 @@ def test_matches_existing():
     candidates: list[dict] = []
     candidates += pipeline._build_version_events(notes32)
     candidates += pipeline._build_endgame_events(notes32)
-    candidates += pipeline._build_livestreams(parse.find_livestreams(load("bili_zzz")))
+    candidates += pipeline._build_livestreams(bilibili.find_livestreams(load("bili_zzz")))
     for name, _s, _e, _t in ACTIVITIES:
         d = load(name)
         body = parse.parse_activity_body(d["text"], versions)

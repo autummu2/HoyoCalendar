@@ -14,7 +14,6 @@ from __future__ import annotations
 import datetime
 import re
 
-from common import bilibili
 from zenless import rules
 
 
@@ -388,30 +387,4 @@ def find_battle_passes(posts: list[dict]) -> list[dict]:
         out.append({"subject": s, "post_id": p.get("post_id", ""),
                     "created_at": p.get("created_at", 0),
                     "version": m.group(1) if m else None})
-    return out
-
-
-# ─── B站前瞻 ─────────────────────────────────────────────
-
-# 「将于8月28日 19:30正式开启」——需要一条带**具体月日**的预告
-RE_LIVESTREAM_DATE = re.compile(r"\d{1,2}\s*月\s*\d{1,2}\s*日")
-
-
-def find_livestreams(items: list[dict]) -> list[dict]:
-    """前瞻预告。复用 common.bilibili.parse_livestream（版本号 / 版本名 / 日期补年），
-    但多一道闸门：只认带具体「X月X日」的那条动态。
-
-    B站官方号在前瞻当天会发「…将于今晚19:30开启！」、前瞻结束后再发一条同名
-    「…前瞻特别节目」，两条都含「前瞻特别节目」+「开启」，原神那份判据会一并收下，
-    而它们都没有日期。绝区零不另写解析，只加这道日期闸。
-    """
-    out = []
-    for d in items:
-        if not RE_LIVESTREAM_DATE.search(d.get("text") or ""):
-            continue
-        r = bilibili.parse_livestream(d.get("text") or "", d.get("pub_ts"))
-        if not r or not r.get("date"):
-            continue
-        r["id"] = d.get("id", "")
-        out.append(r)
     return out
