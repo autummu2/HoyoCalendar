@@ -504,3 +504,27 @@
   tags:
   - 自动推理
   - 待确认版本
+- id: gi-常规-2026-10-七圣召唤热斗模式
+  game: genshin-impact
+  title: 「七圣召唤」热斗模式：自行巧局
+  type: 常规活动
+  start_date: '2026-10-10'
+  end_date: '2026-10-25'
+  color: '#eadac1'
+  source_url: https://www.miyoushe.com/ys/article/78779561
+- id: gi-卡池-2026-10-莓色香颂祈愿明绚
+  game: genshin-impact
+  title: 「莓色香颂」祈愿：「明绚千韵·爱可菲(冰)」概率UP
+  type: 卡池
+  start_date: '2026-10-13'
+  end_date: '2026-11-03'
+  color: '#c1e1eb'
+  source_url: https://www.miyoushe.com/ys/article/78782590
+- id: gi-卡池-2026-10-虚星临渡祈愿虚渊
+  game: genshin-impact
+  title: 「虚星临渡」祈愿：「虚渊暗星·丝柯克(冰)」概率UP
+  type: 卡池
+  start_date: '2026-10-13'
+  end_date: '2026-11-03'
+  color: '#c7cce5'
+  source_url: https://www.miyoushe.com/ys/article/78782589
