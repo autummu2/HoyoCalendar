@@ -528,3 +528,11 @@
   end_date: '2026-11-03'
   color: '#c7cce5'
   source_url: https://www.miyoushe.com/ys/article/78782589
+- id: gi-常规-2026-10-判测胜券本征
+  game: genshin-impact
+  title: 「判测胜券本征」
+  type: 常规活动
+  start_date: '2026-10-12'
+  end_date: '2026-10-23'
+  color: '#e7cdc5'
+  source_url: https://www.miyoushe.com/ys/article/78817337

@@ -406,3 +406,11 @@
   end_date: '2026-10-09'
   color: '#cdede6'
   calibrated: B站前瞻公告
+- id: zzz-版本-2026-10-绝区零33版本重
+  game: zenless-zone-zero
+  title: 《绝区零》3.3 版本「重返天空的旅程」停服更新
+  type: 版本更新
+  start_date: '2026-10-21'
+  end_date: '2026-10-21'
+  color: '#ffffff'
+  calibrated: B站前瞻公告
