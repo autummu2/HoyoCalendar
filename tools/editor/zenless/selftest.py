@@ -252,6 +252,51 @@ def test_bilibili():
     check("回顾长图不算预告", bilibili.parse_livestream(HSR_REVIEW, 1789907100), None)
 
 
+# ─── 版本更新条目（本版 + 下版）───────────────────────────
+
+def test_version_events():
+    """本版 + 下版两条，口径同星铁。
+
+    下版的日期是总纲**明写**的（「3.2版本结束时间为 2026/10/21 …」），而它在本版开服当天
+    就产出——那时 3.3 的前瞻预告还没发（真发在 10-06），所以两条路都要钉住：
+    没名字 → 占位 + 待确认版本；前瞻到了 → 校准补全标题并摘掉标记。
+    """
+    d32 = load("zzz32_version_notes")
+    n32 = parse.parse_version_notes(d32["text"], d32["subject"])
+    n32["post_id"] = d32["post_id"]
+    lives33 = bilibili.find_livestreams(load("bili_zzz_33"))
+
+    check("本版 + 下版", [(e["title"], e["type"], e["start_date"], e["end_date"], e.get("tags"))
+                       for e in pipeline._build_version_events(n32, lives33)],
+          [("《绝区零》3.2 版本「她与她的隐秘往事」停服更新", "版本更新",
+            "2026-09-09", "2026-09-09", None),
+           ("《绝区零》3.3 版本「重返天空的旅程」停服更新", "版本更新",
+            "2026-10-21", "2026-10-21", None)])
+    # 3.2 开服当天的真实情形：3.3 的前瞻还没发
+    check("前瞻未发 → 下版落占位并标待确认",
+          [(e["title"], e.get("tags")) for e in pipeline._build_version_events(n32, [])],
+          [("《绝区零》3.2 版本「她与她的隐秘往事」停服更新", None),
+           (rules.VERSION_PLACEHOLDER_TITLE.format(ver="3.3"), [keys.TAG_PENDING_VERSION])])
+    # 版本名是下版独有的缺口；本版拿不到名字（总纲标题里没有）时连本版都不产
+    check("本版没名字 → 只剩下版", [e["title"] for e in pipeline._build_version_events(
+        {**n32, "name": None}, lives33)], ["《绝区零》3.3 版本「重返天空的旅程」停服更新"])
+    check("版本号 +0.1 预测", pipeline._next_version_number("3.2"), "3.3")
+    check("版本号解不出来 → None（下版这条不产）",
+          pipeline._next_version_number(None), None)
+
+    # 占位 → 下一轮校准：标题被前瞻的版本名补全、标记摘掉，日期不被前瞻改写（它只给标题）
+    filled, changes = calibrate.calibrate(
+        [{"title": rules.VERSION_PLACEHOLDER_TITLE.format(ver="3.3"), "type": "版本更新",
+          "start_date": "2026-10-21", "end_date": "2026-10-21",
+          "tags": [keys.TAG_PENDING_VERSION]}],
+        calibrate.sources_from(lives33, None, game_name=rules.GAME_TITLE),
+        today=datetime.date(2026, 10, 10))
+    check("占位被前瞻补全、标记摘掉",
+          (filled[0]["title"], filled[0].get("tags"), filled[0]["start_date"]),
+          ("《绝区零》3.3 版本「重返天空的旅程」停服更新", None, "2026-10-21"))
+    check("校准依据记的是 B站前瞻公告", filled[0][calibrate.MARKER], "B站前瞻公告")
+
+
 # ─── 交叉核对：本轮会产出的条目 vs 数据文件里的已有条目 ────
 
 # 必须命中的条目（标题格式的回归闸门）。它们就是数据文件里的既有写法，
@@ -276,9 +321,11 @@ def test_matches_existing():
     notes32["post_id"] = load("zzz32_version_notes")["post_id"]
 
     candidates: list[dict] = []
-    candidates += pipeline._build_version_events(notes32)
+    candidates += pipeline._build_version_events(
+        notes32, bilibili.find_livestreams(load("bili_zzz") + load("bili_zzz_33")))
     candidates += pipeline._build_endgame_events(notes32)
-    candidates += pipeline._build_livestreams(bilibili.find_livestreams(load("bili_zzz")))
+    candidates += pipeline._build_livestreams(
+        bilibili.find_livestreams(load("bili_zzz") + load("bili_zzz_33")))
     for name, _s, _e, _t in ACTIVITIES:
         d = load(name)
         body = parse.parse_activity_body(d["text"], versions)
@@ -545,7 +592,7 @@ def test_likely_recorded():
 def main():
     for fn in (test_version_notes, test_banners, test_activities, test_battle_passes,
                test_classification, test_endgame_grid, test_bilibili,
-               test_matches_existing, test_version_activities,
+               test_version_events, test_matches_existing, test_version_activities,
                test_notes_activities_match_data, test_pending_correction,
                test_pending_forces_body_fetch, test_activity_identity,
                test_likely_recorded):

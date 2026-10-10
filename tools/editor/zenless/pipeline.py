@@ -5,10 +5,10 @@
 
 绝区零的信息来源分工：
 
-  停服更新公告（总纲）  版本更新日、版本终点、高难期数、**活动日期的相对写法**
+  停服更新公告（总纲）  版本更新日、下个版本的更新日、版本终点、高难期数、**活动日期的相对写法**
   活动公告（各自）      标题、类型、日期、描述、配图
   限时频段公告          卡池标题（限定S级代理人名只在正文里）与日期
-  B站官方账号           前瞻直播日期（米游社把它发在资讯栏，本管线抓的公告栏里没有）
+  B站官方账号           前瞻直播日期与下版的版本名（米游社把它发在资讯栏，本管线抓的公告栏里没有）
 
 活动**类型**取不到总纲里：实测两份总纲都没有「活动常驻说明」/「丽都纪事」段，
 也没有活动入口链接。所以总纲列出的活动先按默认类型落盘（`keys.PENDING_FIELD` 标记），
@@ -167,19 +167,47 @@ def _activities_from_notes(contents, versions):
     return out
 
 
-def _build_version_events(notes):
-    """当前版本的停服更新条目。日期即版本更新日（开服当天，起止同一天）。
-
-    只发当前版本：版本名只有它自己的总纲给了，而「下个版本的日期」总纲里已经有了
-    （写成「X.Y版本结束时间为 …」），提前挂一条没名字的占位不如不做。
+def _next_version_number(ver: str) -> str | None:
+    """3.2 → 3.3。总纲写明了「下个版本的日期」（「X.Y版本结束时间为 …」）却不写它的号，
+    只有这一处要用，是个朴素 +0.1 预测。跨大版本（3.9→4.0）会猜错：猜错时 keys 的同类型
+    7 天兜底仍认得出是同一条、不至插重复，但条目上的版本号与「待确认版本」标记要人工改。
     """
-    if not (notes and notes.get("start_date") and notes.get("name")):
-        return []
-    d = notes["start_date"]
-    return [{"title": rules.VERSION_UPDATE_TITLE.format(
-                ver=notes["version"], name=notes["name"]),
-             "type": "版本更新", "start_date": d, "end_date": d,
-             "color": rules.COLORS["版本更新"], "post_id": notes.get("post_id")}]
+    try:
+        major, minor = ver.split(".")
+        return f"{major}.{int(minor) + 1}"
+    except (AttributeError, ValueError):
+        return None
+
+
+def _build_version_events(notes, lives) -> list[dict]:
+    """版本更新条目：**本版 + 下版**（口径同 starrail/pipeline.py）。
+
+    日期全部照抄总纲、不外推：本版 = 【更新开始时间】，下版 = 「X.Y版本结束时间为 …」。
+    下版这条在**本版开服当天**就能产出，比它自己的总纲早一整个版本；代价是版本名只能从
+    B站前瞻预告取（前瞻落在更新前约 12 天），还没发时先落**占位**并标「待确认版本」，
+    等前瞻到了由 calibrate 补全标题、摘掉标记（标题是 VALUE_FIELDS 之一）。
+    """
+    out: list[dict] = []
+    ver = (notes or {}).get("version")
+    if notes and notes.get("start_date") and notes.get("name"):
+        d = notes["start_date"]
+        out.append({"title": rules.VERSION_UPDATE_TITLE.format(ver=ver, name=notes["name"]),
+                    "type": "版本更新", "start_date": d, "end_date": d,
+                    "color": rules.COLORS["版本更新"], "post_id": notes.get("post_id")})
+    # 下版不给 post_id：这条日期的出处是**上一版**的总纲，挂它的链接会指错；
+    # 它自己的总纲到了也只由校准改值（VALUE_FIELDS 不含 source_url）。
+    nxt = _next_version_number(ver)
+    nxt_date = (notes or {}).get("next_version_date")
+    if nxt and nxt_date:
+        name = next((l["name"] for l in lives if l.get("version") == nxt), None)
+        e = {"title": rules.VERSION_UPDATE_TITLE.format(ver=nxt, name=name) if name
+             else rules.VERSION_PLACEHOLDER_TITLE.format(ver=nxt),
+             "type": "版本更新", "start_date": nxt_date, "end_date": nxt_date,
+             "color": rules.COLORS["版本更新"]}
+        if not name:
+            e["tags"] = [keys.TAG_PENDING_VERSION]
+        out.append(e)
+    return out
 
 
 def _build_livestreams(lives):
@@ -336,7 +364,7 @@ def run():
         deduped.setdefault(keys.event_key(a) or (a.get("title"), a.get("start_date")), a)
     acts = list(deduped.values())
     all_events = (
-        _build_version_events(notes)
+        _build_version_events(notes, lives)
         + _build_livestreams(lives)
         + _build_endgame_events(notes)
         + acts

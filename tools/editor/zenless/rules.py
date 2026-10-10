@@ -81,6 +81,9 @@ ENDGAME_INDEX = r"第([一二三四五六七八九十]+)期"
 GAME_TITLE = "绝区零"
 # 与数据文件既有条目一致：《绝区零》3.2 版本「她与她的隐秘往事」停服更新
 VERSION_UPDATE_TITLE = f"《{GAME_TITLE}》{{ver}} 版本「{{name}}」停服更新"
+# 版本名还没到手（下版的前瞻预告未发）时的占位，等前瞻到了由 calibrate 换掉并摘掉
+# 「待确认版本」标记。与星铁同一格式，两侧都有这一步，别写成两种写法。
+VERSION_PLACEHOLDER_TITLE = f"《{GAME_TITLE}》{{ver}} 版本停服更新"
 LIVESTREAM_TITLE = f"《{GAME_TITLE}》{{ver}} 版本「{{name}}」前瞻特别节目"
 # 丽都城募的期名每版本都一样，必须带版本号才能与上一期区分（否则去重键会撞）
 BATTLE_PASS_TITLE = "{ver}版本「丽都城募」"
