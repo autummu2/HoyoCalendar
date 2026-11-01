@@ -5,3 +5,10 @@
   start_date: '2026-11-01'
   end_date: '2026-11-01'
   color: '#f3d9a4'
+- id: planet-版本-2026-12-星布谷地公测
+  game: petit-planet
+  title: 《星布谷地》正式公测
+  type: 版本更新
+  start_date: '2026-12-04'
+  end_date: '2026-12-04'
+  color: '#ffffff'

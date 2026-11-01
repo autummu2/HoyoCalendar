@@ -383,3 +383,11 @@
   end_date: '2026-11-10'
   color: '#cbd1e0'
   source_url: https://www.miyoushe.com/sr/article/79191334
+- id: hsr-常规-2026-11-寰宇美学幻乐秀场
+  game: honkai-star-rail
+  title: 「寰宇美学•幻乐秀场」
+  type: 常规活动
+  start_date: '2026-11-11'
+  end_date: '2026-12-22'
+  color: '#cdcae2'
+  source_url: https://www.miyoushe.com/sr/article/79217286
