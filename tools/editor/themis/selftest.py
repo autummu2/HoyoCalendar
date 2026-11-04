@@ -44,13 +44,15 @@ def check(label: str, got, want):
 
 NEWS = load("tea_news")                 # 资讯栏 50 条（含正文，2026-09-25 11:00 的快照）
 VERSION_POSTS = load("tea_version_posts")   # 公告栏 45 条（只有标题与发布时间）
-# 快照之后才出现的三篇，单独放：夹具保持「同一时刻的窗口」
+# 快照之后才出现的四篇，单独放：夹具保持「同一时刻的窗口」
 #   - 商城上架（主题是往期复刻，内容是礼包）→ 第三关丢
 #   - 语音电话（莫弈生日）→ 语音电话判据丢（2026-10-02 裁定）
 #   - 服饰/家装上新折扣（专属甜心）→ 标题名单丢（2026-10-26 裁定）
+#   - 常驻功能上线（恋念集思）→ 标题名单丢（2026-11-04 裁定）
 SHOP = load("tea_shop_reprint")
 VOICE = load("tea_voice_call")
 SWEET = load("tea_sweet_shop")
+FEATURE = load("tea_feature_intro")
 BODY = {str(p["post_id"]): p["text"] for p in NEWS}
 POST = {p["subject"]: p for p in NEWS}
 
@@ -81,6 +83,12 @@ def test_title_skip():
     check("服饰上新折扣有完整时段（所以必须靠名单挡）",
           parse.parse_period(SWEET["text"]), ("2026-10-27", "2026-11-05"))
     check("服饰上新折扣被名单挡下", parse.find_news([SWEET]), [])
+
+    # 常驻功能上线：正文里唯一的完整时段属于同篇顺带提到的「纷彩心意」福利活动
+    # （已单独录入），第二道闸会把功能名配上别人的日期，所以靠标题的「全新功能丨」挡。
+    check("功能上线有完整时段（所以必须靠名单挡）",
+          parse.parse_period(FEATURE["text"]), ("2026-11-05", "2026-11-11"))
+    check("功能上线被名单挡下", parse.find_news([FEATURE]), [])
 
     # 节日福利帖**不**在名单里（`快乐丨` 没进名单）：中秋/教师节都带游戏内登录奖励
     check("中秋快乐过闸", "中秋快乐丨佳节长相伴，今宵共团圆" in [p["subject"] for p in kept], True)
