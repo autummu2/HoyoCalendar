@@ -378,3 +378,40 @@
   tags:
   - 左然
   - SSR
+- id: tea-卡池-2026-11-莫弈雪愿相宜
+  game: tears-of-themis
+  title: 莫弈SSS【雪愿相宜】
+  type: 卡池
+  start_date: '2026-11-05'
+  end_date: '2026-11-11'
+  color: '#eacbc1'
+  source_url: https://www.miyoushe.com/wd/article/79308001
+  tags:
+  - 莫弈
+  - SSS
+- id: tea-常规-2026-11-纷彩心意
+  game: tears-of-themis
+  title: 「纷彩心意」
+  type: 常规活动
+  start_date: '2026-11-05'
+  end_date: '2026-11-11'
+  color: '#f1d9bb'
+  source_url: https://www.miyoushe.com/wd/article/79287295
+- id: tea-版本-2026-11-未定事件簿62版
+  game: tears-of-themis
+  title: 《未定事件簿》6.2 版本停服更新
+  type: 版本更新
+  start_date: '2026-11-05'
+  end_date: '2026-11-05'
+  color: '#ffffff'
+  source_url: https://www.miyoushe.com/wd/article/79328065
+- id: tea-常规-2026-11-欲爱相逢莫弈篇
+  game: tears-of-themis
+  title: 「欲爱相逢·莫弈篇」
+  type: 常规活动
+  start_date: '2026-11-05'
+  end_date: '2026-11-11'
+  color: '#f1c4bb'
+  source_url: https://www.miyoushe.com/wd/article/79327803
+  tags:
+  - 莫弈

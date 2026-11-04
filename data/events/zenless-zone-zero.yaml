@@ -512,8 +512,7 @@
   type: 常规活动
   start_date: '2026-11-04'
   end_date: '2026-11-08'
-  color: '#cce0f0'
-  pending: 总纲
+  color: '#f2d2b9'
 - id: zzz-常规-2026-11-嗯呢从天降
   game: zenless-zone-zero
   title: 「『嗯呢』从天降」
