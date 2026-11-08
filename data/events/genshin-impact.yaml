@@ -665,6 +665,7 @@
   end_date: '2026-11-24'
   color: '#cdc8e3'
   source_url: https://www.miyoushe.com/ys/article/79287292
+  calibrated: B站总览
 - id: gi-卡池-2026-11-众水的颂诗祈愿不
   game: genshin-impact
   title: 「众水的颂诗」祈愿：「不休独舞·芙宁娜(水)」概率UP
@@ -673,6 +674,7 @@
   end_date: '2026-11-24'
   color: '#c7cee4'
   source_url: https://www.miyoushe.com/ys/article/79287291
+  calibrated: B站总览
 - id: gi-卡池-2026-11-神铸赋形法器秘星
   game: genshin-impact
   title: 神铸赋形：「法器·秘星典谕」「单手剑·静水流涌之辉」概率UP
