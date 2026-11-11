@@ -415,3 +415,32 @@
   source_url: https://www.miyoushe.com/wd/article/79327803
   tags:
   - 莫弈
+- id: tea-常规-2026-11-园满清尘
+  game: tears-of-themis
+  title: 「园满清尘」
+  type: 常规活动
+  start_date: '2026-11-12'
+  end_date: '2026-11-18'
+  color: '#c4d1e7'
+  source_url: https://www.miyoushe.com/wd/article/79488224
+- id: tea-常规-2026-11-锋芒拾辉限时复刻
+  game: tears-of-themis
+  title: 「锋芒拾辉」限时复刻
+  type: 常规活动
+  start_date: '2026-11-12'
+  end_date: '2026-11-16'
+  color: '#c8d0e4'
+  source_url: https://www.miyoushe.com/wd/article/79486225
+  tags:
+  - 陆景和
+  - MR
+- id: tea-卡池-2026-11-少年如你等主题限
+  game: tears-of-themis
+  title: 「少年如你」等主题限时复刻
+  type: 卡池
+  start_date: '2026-11-12'
+  end_date: '2026-11-18'
+  color: '#e2cec9'
+  source_url: https://www.miyoushe.com/wd/article/79466345
+  tags:
+  - SSR

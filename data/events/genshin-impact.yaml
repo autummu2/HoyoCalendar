@@ -683,3 +683,11 @@
   end_date: '2026-11-24'
   color: '#f2d3ba'
   source_url: https://www.miyoushe.com/ys/article/79287289
+- id: gi-高难-2026-11-幽境危战
+  game: genshin-impact
+  title: 「幽境危战」
+  type: 高难挑战
+  start_date: '2026-11-11'
+  end_date: '2026-12-14'
+  color: '#d8c4e8'
+  source_url: https://www.miyoushe.com/ys/article/79448861

@@ -516,19 +516,17 @@
 - id: zzz-常规-2026-11-嗯呢从天降
   game: zenless-zone-zero
   title: 「『嗯呢』从天降」
-  type: 常规活动
+  type: 登录福利
   start_date: '2026-11-11'
   end_date: '2026-11-30'
-  color: '#cce0f0'
-  pending: 总纲
+  color: '#ecc0c2'
 - id: zzz-常规-2026-11-跛脚乌鸦奇踪记
   game: zenless-zone-zero
   title: 「跛脚乌鸦奇踪记」
   type: 常规活动
   start_date: '2026-11-11'
   end_date: '2026-11-29'
-  color: '#cce0f0'
-  pending: 总纲
+  color: '#ecc0c8'
 - id: zzz-常规-2026-11-修复吧漂流画集
   game: zenless-zone-zero
   title: 「修复吧！漂流画集」
@@ -554,3 +552,11 @@
   color: '#ffffff'
   tags:
   - 待确认版本
+- id: zzz-卡池-2026-11-调频活动赛维里安
+  game: zenless-zone-zero
+  title: 调频活动-赛维里安/诺姆
+  type: 卡池
+  start_date: '2026-11-11'
+  end_date: '2026-12-01'
+  color: '#d1d6da'
+  source_url: https://www.miyoushe.com/zzz/article/79450581
