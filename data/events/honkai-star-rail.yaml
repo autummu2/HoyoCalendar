@@ -416,6 +416,7 @@
   end_date: '2026-12-22'
   color: '#f7d9a2'
   source_url: https://www.miyoushe.com/sr/article/79482327
+  calibrated: 米游社版本更新说明
 - id: hsr-高难-2026-11-末日幻影领航冥茫
   game: honkai-star-rail
   title: 末日幻影·领航冥茫
@@ -424,6 +425,7 @@
   end_date: '2026-12-27'
   color: '#abbfed'
   source_url: https://www.miyoushe.com/sr/article/79482327
+  calibrated: 米游社版本更新说明
 - id: hsr-高难-2026-11-虚构叙事虚事成理
   game: honkai-star-rail
   title: 虚构叙事·虚事成理
@@ -432,6 +434,7 @@
   end_date: '2027-01-10'
   color: '#faea9e'
   source_url: https://www.miyoushe.com/sr/article/79482327
+  calibrated: 米游社版本更新说明
 - id: hsr-高难-2026-12-混沌回忆漆黑残响
   game: honkai-star-rail
   title: 混沌回忆·漆黑残响
@@ -440,6 +443,7 @@
   end_date: '2027-01-24'
   color: '#cff0a8'
   source_url: https://www.miyoushe.com/sr/article/79482327
+  calibrated: 米游社版本更新说明
 - id: hsr-常规-2026-11-星际和平盛典成名
   game: honkai-star-rail
   title: 「星际和平盛典：成名之路」

@@ -533,8 +533,7 @@
   type: 常规活动
   start_date: '2026-11-16'
   end_date: '2026-11-29'
-  color: '#cce0f0'
-  pending: 总纲
+  color: '#f2cdb9'
 - id: zzz-常规-2026-11-数据悬赏实战模拟
   game: zenless-zone-zero
   title: 「数据悬赏-实战模拟」
