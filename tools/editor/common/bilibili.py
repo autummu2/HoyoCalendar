@@ -106,18 +106,24 @@ def fetch_dynamics(uid: int = GENSHIN_UID, limit: int = 20, retries: int = 3) ->
     s = _session(uid)
     items: list[dict] = []
     offset = ""
+    last_error = ""
     while len(items) < limit:
         data = {}
         for attempt in range(retries):
             try:
                 d = _feed(s, uid, offset)
-            except Exception:
+            except Exception as e:
                 d = {}
+                last_error = str(e)
             # code==0 且返回了条目才算成功。软风控时 B站不报错、
             # 直接返回 code=0 + 空列表，需一并当作需重试的情况。
             if d.get("code") == 0 and (d.get("data") or {}).get("items"):
                 data = d["data"]
                 break
+            if d.get("code"):
+                last_error = f"code={d.get('code')} {d.get('message', '')}".rstrip()
+            else:
+                last_error = last_error or "空列表"
             # 命中风控（-352 / -412 或软风控空列表）时指数退避重试
             time.sleep((attempt + 1) * 10 + random.uniform(2, 6))
         if not data:
@@ -137,6 +143,9 @@ def fetch_dynamics(uid: int = GENSHIN_UID, limit: int = 20, retries: int = 3) ->
             break
         offset = data["offset"]
         time.sleep(random.uniform(1, 3))  # 分页间隔，降低触发软风控的概率
+    if not items:
+        # 与公告列表同理：空列表会让依赖 B站 的日历项悄悄缺失，必须留一行
+        print(f"== B站动态 == 空：{last_error or '无可解析条目'}")
     return items[:limit]
 
 

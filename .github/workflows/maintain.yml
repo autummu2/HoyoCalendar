@@ -67,8 +67,8 @@ jobs:
           tail -n +"$start" "$log" > /tmp/run.log
 
           echo "### 自动维护" >> "$GITHUB_STEP_SUMMARY"
-          grep -E '^---|^== 正文抓取 ==|^== 运行结果 ==' /tmp/run.log \
-            >> "$GITHUB_STEP_SUMMARY" || true
+          grep -E '^---|^== 正文抓取 ==|^== 公告列表 ==|^== B站动态 ==|^== 运行结果 ==' \
+            /tmp/run.log >> "$GITHUB_STEP_SUMMARY" || true
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### data/events 变更" >> "$GITHUB_STEP_SUMMARY"
           git diff --stat -- data/events/ >> "$GITHUB_STEP_SUMMARY" || true
@@ -79,6 +79,9 @@ jobs:
           fi
           if grep -qE '风控 1034: [1-9]' /tmp/run.log; then
             echo "::warning::米游社正文触发风控（retcode 1034），本轮部分条目可能缺失"
+          fi
+          if grep -qE '^== 公告列表 == 失败|^== B站动态 == 空' /tmp/run.log; then
+            echo "::warning::公告列表或 B站动态为空，本轮可能被风控，条目可能缺失"
           fi
 
       - name: Commit data

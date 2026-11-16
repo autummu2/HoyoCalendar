@@ -479,6 +479,10 @@ def fetch_post_list(game_id: str = "genshin-impact", page_size: int = 10,
         r = requests.get(url, params=params, headers=headers, timeout=10)
         data = r.json()
         if data.get("retcode") != 0:
+            # 静默返回 [] 会让整轮表现为「四个计数器全是 0」，看起来像今天没活动；
+            # 风控时只有这一行能区分「列表被拦」与「没有新公告」
+            print(f"== 公告列表 == 失败：retcode={data.get('retcode')} "
+                  f"{data.get('message', '')}".rstrip())
             return []
         posts = []
         for item in data["data"]["list"]:
@@ -489,7 +493,8 @@ def fetch_post_list(game_id: str = "genshin-impact", page_size: int = 10,
                 "created_at": post.get("created_at", 0),
             })
         return posts
-    except Exception:
+    except Exception as e:
+        print(f"== 公告列表 == 失败：{e}")
         return []
 
 
