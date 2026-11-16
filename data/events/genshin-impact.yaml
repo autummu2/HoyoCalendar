@@ -691,3 +691,23 @@
   end_date: '2026-12-14'
   color: '#d8c4e8'
   source_url: https://www.miyoushe.com/ys/article/79448861
+- id: gi-版本更新-《原神》7.3 版本停服更新
+  game: genshin-impact
+  title: 《原神》7.3 版本停服更新
+  type: 版本更新
+  start_date: '2026-12-16'
+  end_date: '2026-12-16'
+  color: '#ffffff'
+  tags:
+  - 自动推理
+  - 待确认版本
+- id: gi-前瞻直播-《原神》7.3 版本前瞻特别节目
+  game: genshin-impact
+  title: 《原神》7.3 版本前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-12-05'
+  end_date: '2026-12-05'
+  color: '#7dc4ea'
+  tags:
+  - 自动推理
+  - 待确认版本

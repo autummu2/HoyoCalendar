@@ -544,13 +544,12 @@
   pending: 总纲
 - id: zzz-版本-2026-12-绝区零34版本停
   game: zenless-zone-zero
-  title: 《绝区零》3.4 版本停服更新
+  title: 《绝区零》3.4 版本「长日终尽」停服更新
   type: 版本更新
   start_date: '2026-12-02'
   end_date: '2026-12-02'
   color: '#ffffff'
-  tags:
-  - 待确认版本
+  calibrated: B站前瞻公告
 - id: zzz-卡池-2026-11-调频活动赛维里安
   game: zenless-zone-zero
   title: 调频活动-赛维里安/诺姆
@@ -559,3 +558,10 @@
   end_date: '2026-12-01'
   color: '#d1d6da'
   source_url: https://www.miyoushe.com/zzz/article/79450581
+- id: zzz-前瞻-2026-11-绝区零34版本长
+  game: zenless-zone-zero
+  title: 《绝区零》3.4 版本「长日终尽」前瞻特别节目
+  type: 前瞻直播
+  start_date: '2026-11-20'
+  end_date: '2026-11-20'
+  color: '#cdede6'

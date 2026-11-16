@@ -455,3 +455,24 @@
   tags:
   - 夏彦
   - SSR
+- id: tea-常规-2026-11-爱的未定式陆景和
+  game: tears-of-themis
+  title: 「爱的未定式·陆景和篇」
+  type: 常规活动
+  start_date: '2026-11-17'
+  end_date: '2026-11-23'
+  color: '#c6bdee'
+  source_url: https://www.miyoushe.com/wd/article/79603547
+  tags:
+  - 陆景和
+- id: tea-卡池-2026-11-陆景和苦昼长
+  game: tears-of-themis
+  title: 陆景和SSR【苦昼长】
+  type: 卡池
+  start_date: '2026-11-17'
+  end_date: '2026-11-23'
+  color: '#decce0'
+  source_url: https://www.miyoushe.com/wd/article/79602859
+  tags:
+  - 陆景和
+  - SSR
