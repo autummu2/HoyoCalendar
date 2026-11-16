@@ -26,19 +26,9 @@ from pathlib import Path
 # 允许直接 `python zenless/pipeline.py`（此时 sys.path[0] 是本目录，找不到兄弟模块）
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import winreg
-
-# 凭据存注册表（setx 写的也是这里），须在 import bilibili / extractor 前读入 os.environ
-# （见记忆 bili-sessdata-registry）。两个都可选，缺任何一个都不影响运行。
-try:
-    _k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment")
-    for _name in ("BILI_SESSDATA", "MIYOUSHE_COOKIE"):
-        try:
-            os.environ[_name], _ = winreg.QueryValueEx(_k, _name)
-        except OSError:
-            pass
-except OSError:
-    pass
+# 凭据可选，须在 import bilibili / extractor 前读入 os.environ（见 common.credentials）
+from common import credentials
+credentials.load_env()
 
 from common import bilibili, body_cache, calibrate, keys, yaml_io
 from common.colors import pastel_from_url

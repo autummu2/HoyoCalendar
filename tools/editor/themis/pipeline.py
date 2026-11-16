@@ -30,18 +30,9 @@ from pathlib import Path
 # 允许直接 `python themis/pipeline.py`（此时 sys.path[0] 是本目录，找不到兄弟模块）
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import winreg
-
-# 凭据存注册表（setx 写的也是这里），须在 import extractor 前读入 os.environ
-# （见记忆 bili-sessdata-registry）。可选，缺了也不影响运行。
-try:
-    _k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment")
-    try:
-        os.environ["MIYOUSHE_COOKIE"], _ = winreg.QueryValueEx(_k, "MIYOUSHE_COOKIE")
-    except OSError:
-        pass
-except OSError:
-    pass
+# 凭据可选，须在 import extractor 前读入 os.environ（见 common.credentials）
+from common import credentials
+credentials.load_env()
 
 from common import body_cache, keys, yaml_io
 from common.colors import pastel_from_url

@@ -80,8 +80,10 @@ GAMES = [("原神", _genshin), ("崩坏：星穹铁道", _starrail), ("绝区零
 
 
 def main():
+    """返回失败的游戏名列表；`__main__` 据此给退出码，供 GitHub Actions 判断本轮是否健康。"""
     os.makedirs("logs", exist_ok=True)
     path = os.path.join("logs", f"{datetime.date.today():%Y-%m-%d}.log")
+    failures = []
     with open(path, "a", encoding="utf-8") as log:
         log.write(f"\n=== {datetime.datetime.now():%Y-%m-%d %H:%M:%S} 运行 ===\n")
         log.flush()
@@ -94,9 +96,13 @@ def main():
                     run_game()
                 except Exception:
                     traceback.print_exc()
+                    failures.append(name)
+            print(f"\n== 运行结果 == 失败 {len(failures)}/{len(GAMES)}"
+                  + (f"：{'、'.join(failures)}" if failures else ""))
         finally:
             sys.stdout = real_stdout
+    return failures
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(1 if main() else 0)

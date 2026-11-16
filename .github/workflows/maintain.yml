@@ -1,0 +1,114 @@
+name: Maintain data
+
+on:
+  schedule:
+    - cron: '30 2 * * *'        # 02:30 UTC = 10:30 Asia/Shanghai
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只运行、不提交（检查 diff 与日志）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: maintain-data
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Asia/Shanghai      # 缓存 TTL / 校准窗口 / 日期推断都按本地日期
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/editor/requirements.txt
+
+      - run: pip install -r tools/editor/requirements.txt
+
+      - name: Restore body cache
+        uses: actions/cache@v4
+        with:
+          path: tools/editor/.cache
+          key: body-cache-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            body-cache-
+
+      - name: Run maintenance
+        id: run
+        run: python tools/editor/maintain.py
+
+      - name: Summarize run
+        if: always()
+        run: |
+          log="$(ls -t tools/editor/logs/*.log 2>/dev/null | head -1)"
+          if [ -z "$log" ]; then
+            echo "::error::maintain.py 没有生成日志"
+            exit 1
+          fi
+          # 日志按天追加：只取最后一次运行，避免读到当天早先的记录
+          start=$(grep -n '^=== .* 运行 ===$' "$log" | tail -1 | cut -d: -f1)
+          if [ -z "$start" ]; then
+            echo "::error::日志缺少本次运行标记"
+            exit 1
+          fi
+          tail -n +"$start" "$log" > /tmp/run.log
+
+          echo "### 自动维护" >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^---|^== 正文抓取 ==|^== 运行结果 ==' /tmp/run.log \
+            >> "$GITHUB_STEP_SUMMARY" || true
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### data/events 变更" >> "$GITHUB_STEP_SUMMARY"
+          git diff --stat -- data/events/ >> "$GITHUB_STEP_SUMMARY" || true
+
+          if ! grep -q '== 运行结果 ==' /tmp/run.log; then
+            echo "::error::本轮未正常结束（崩溃或被杀）"
+            exit 1
+          fi
+          if grep -qE '风控 1034: [1-9]' /tmp/run.log; then
+            echo "::warning::米游社正文触发风控（retcode 1034），本轮部分条目可能缺失"
+          fi
+
+      - name: Commit data
+        id: commit
+        if: ${{ success() && inputs.dry_run != true }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/events/; then
+            echo "无数据变更"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git add data/events/
+          git commit -m "data: 自动维护 $(date +%F)"
+          git push origin HEAD:develop
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Fast-forward main
+        if: ${{ steps.commit.outputs.changed == 'true' }}
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          git merge --ff-only develop
+          git push origin main
+
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintain-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tools/editor/logs/
+          retention-days: 14

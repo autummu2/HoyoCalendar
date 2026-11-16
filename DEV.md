@@ -98,3 +98,4 @@ pip install -r tools/editor/requirements.txt
 
 CI 在 push/PR 到 main 和 develop 时自动运行 lint → test → build。
 编辑器推送数据更新到 develop 后自动合并到 main 并触发部署。
+数据维护另由 `.github/workflows/maintain.yml` 每天 10:30（北京时间）自动运行：有变更则提交 develop、快进 main 并部署，方案见 `DEVELOPMENT_PLAN.md` §6.9。

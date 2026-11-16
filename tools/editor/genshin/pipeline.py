@@ -9,23 +9,14 @@ import datetime
 import json
 import os
 import sys
-import winreg
 from pathlib import Path
 
 # 允许直接 `python genshin/pipeline.py`（此时 sys.path[0] 是本目录，找不到兄弟包）
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-# 凭据存注册表（setx 写的也是这里），须在 import bilibili / extractor 前读入 os.environ
-# （见记忆 bili-sessdata-registry）。两个都可选，缺任何一个都不影响运行。
-try:
-    k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment")
-    for _name in ("BILI_SESSDATA", "MIYOUSHE_COOKIE"):
-        try:
-            os.environ[_name], _ = winreg.QueryValueEx(k, _name)
-        except OSError:
-            pass
-except OSError:
-    pass
+# 凭据可选，须在 import bilibili / extractor 前读入 os.environ（见 common.credentials）
+from common import credentials
+credentials.load_env()
 
 from common import bilibili, calibrate, keys, yaml_io
 from common.colors import FALLBACK_COLOR, pastel_from_url
