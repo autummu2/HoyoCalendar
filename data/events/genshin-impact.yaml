@@ -711,3 +711,12 @@
   tags:
   - 自动推理
   - 待确认版本
+- id: gi-深境螺旋-深境螺旋1216
+  game: genshin-impact
+  title: 深境螺旋1216
+  type: 高难挑战
+  start_date: '2026-12-16'
+  end_date: '2027-01-15'
+  color: '#8779d2'
+  tags:
+  - 自动推理
