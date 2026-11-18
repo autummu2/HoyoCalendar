@@ -720,3 +720,11 @@
   color: '#8779d2'
   tags:
   - 自动推理
+- id: gi-常规-2026-11-压力方块粉碎计划
+  game: genshin-impact
+  title: 「压力方块粉碎计划」
+  type: 常规活动
+  start_date: '2026-11-20'
+  end_date: '2026-11-29'
+  color: '#b9d6f2'
+  source_url: https://www.miyoushe.com/ys/article/79640409
