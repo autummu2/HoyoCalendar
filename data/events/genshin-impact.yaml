@@ -728,3 +728,35 @@
   end_date: '2026-11-29'
   color: '#b9d6f2'
   source_url: https://www.miyoushe.com/ys/article/79640409
+- id: gi-卡池-2026-11-神铸赋形单手剑朏
+  game: genshin-impact
+  title: 神铸赋形：「单手剑·朏魄含光」「弓·霜结的誓金枝」概率UP
+  type: 卡池
+  start_date: '2026-11-24'
+  end_date: '2026-12-15'
+  color: '#ecd1bf'
+  source_url: https://www.miyoushe.com/ys/article/79660853
+- id: gi-卡池-2026-11-呀吼吼博物志祈愿
+  game: genshin-impact
+  title: 「呀吼吼博物志」祈愿：「博闻异旅·莉奈娅(岩)」概率UP
+  type: 卡池
+  start_date: '2026-11-24'
+  end_date: '2026-12-15'
+  color: '#ecd8bf'
+  source_url: https://www.miyoushe.com/ys/article/79660850
+- id: gi-卡池-2026-11-华黍由仪祈愿驹隙
+  game: genshin-impact
+  title: 「华黍由仪」祈愿：「驹隙隐泉·兹白(岩)」概率UP
+  type: 卡池
+  start_date: '2026-11-24'
+  end_date: '2026-12-15'
+  color: '#dbd9d0'
+  source_url: https://www.miyoushe.com/ys/article/79660849
+- id: gi-卡池-2026-11-炎天铸名祈愿集录
+  game: genshin-impact
+  title: 「炎天铸名」祈愿：集录祈愿开启
+  type: 卡池
+  start_date: '2026-11-24'
+  end_date: '2026-12-15'
+  color: '#eccbc0'
+  source_url: https://www.miyoushe.com/ys/article/79660855
