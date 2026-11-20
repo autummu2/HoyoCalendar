@@ -760,3 +760,11 @@
   end_date: '2026-12-15'
   color: '#eccbc0'
   source_url: https://www.miyoushe.com/ys/article/79660855
+- id: gi-常规-2026-11-七圣召唤热斗模式
+  game: genshin-impact
+  title: 「七圣召唤」热斗模式：奇策竞驰
+  type: 常规活动
+  start_date: '2026-11-21'
+  end_date: '2026-12-06'
+  color: '#cce0f0'
+  source_url: https://www.miyoushe.com/ys/article/79658241
