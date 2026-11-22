@@ -484,3 +484,23 @@
   end_date: '2026-12-23'
   color: '#b9ddf2'
   source_url: https://www.miyoushe.com/wd/article/79639711
+- id: tea-卡池-2026-11-夏彦生日系列限时
+  game: tears-of-themis
+  title: 夏彦生日系列限时复刻
+  type: 卡池
+  start_date: '2026-11-24'
+  end_date: '2026-11-26'
+  color: '#eddcbe'
+  source_url: https://www.miyoushe.com/wd/article/79712870
+  tags:
+  - 夏彦
+- id: tea-常规-2026-11-岁悦同欢夏彦篇生
+  game: tears-of-themis
+  title: 「岁悦同欢·夏彦篇」生日拼图
+  type: 常规活动
+  start_date: '2026-11-24'
+  end_date: '2026-12-01'
+  color: '#f0dabb'
+  source_url: https://www.miyoushe.com/wd/article/79711880
+  tags:
+  - 夏彦

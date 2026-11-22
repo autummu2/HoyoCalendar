@@ -492,3 +492,11 @@
   end_date: '2026-12-02'
   color: '#cfc9e3'
   source_url: https://www.miyoushe.com/sr/article/79466344
+- id: hsr-常规-2026-11-位面分裂
+  game: honkai-star-rail
+  title: 「位面分裂」
+  type: 常规活动
+  start_date: '2026-11-23'
+  end_date: '2026-12-06'
+  color: '#bcc8ef'
+  source_url: https://www.miyoushe.com/sr/article/79712872
