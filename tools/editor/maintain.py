@@ -38,7 +38,13 @@ class _Tee:
         self._log = log
 
     def write(self, text):
-        self._stream.write(text)
+        try:
+            self._stream.write(text)
+        except UnicodeEncodeError:
+            # Windows 控制台可能是 GBK；标题里的 U+2022（•）等字符编不出来时，
+            # 宁可控制台显示成 ?，也不让整轮维护中断（日志仍写原文）
+            enc = self._stream.encoding or "utf-8"
+            self._stream.write(text.encode(enc, "replace").decode(enc, "replace"))
         self._log.write(text)
         return len(text)
 
