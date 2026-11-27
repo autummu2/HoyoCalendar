@@ -165,6 +165,42 @@ def title_of(subject: str, text: str, etype: str) -> str:
     return f"「{topic}」{suffix}"
 
 
+# 角色与稀有度之间偶尔夹「生日」（`夏彦生日SSR【于彼朝阳】`），最多让 4 个字符
+EMBEDDED_CARD_RE = re.compile(
+    rf"({'|'.join(rules.HEROES)})[^【\n]{{0,4}}?({'|'.join(rules.RARITIES)})【([^】]{{1,12}})】")
+
+
+def find_embedded_banners(text: str) -> list[dict]:
+    """活动预告里内嵌的卡池段 → 卡池候选（RULES §2.5）。
+
+    生日活动预告把卡池和活动写在同一篇里，正文按 `✨` 分段，卡池段的标题带
+    `…活动限定SSR开放获取&概率UP`，段内自带 `▶活动时间` 与 `X生日SSR【思绪名】`。
+    只认同时满足「段内有 `概率UP` + 完整时段 + 角色/稀有度/思绪名」的段；普通活动段
+    （`生日活动预告`、`邀请函折扣` 等）不满足，不受影响。
+
+    调用方只对**未判成卡池**的帖子调用：轮替/复刻帖整体已经是卡池，正文会列出
+    整个池子的角色，拆段会成倍重复。
+    """
+    out: dict = {}
+    for sec in re.split(r"✨", text or ""):
+        if rules.BANNER_SECTION_KEYWORD not in sec:
+            continue
+        start, end = parse_period(sec)
+        if not (start and end):
+            continue
+        for m in EMBEDDED_CARD_RE.finditer(sec):
+            hero, rarity, name = m.groups()
+            title = f"{hero}{rarity}【{name}】"
+            out[(title, start)] = {
+                "title": title,
+                "type": "卡池",
+                "start_date": start,
+                "end_date": end,
+                "tags": [hero, rarity],
+            }
+    return list(out.values())
+
+
 def detect_tags(subject: str, text: str) -> list[str]:
     """认标签：男主名 → 稀有度 → 联动（RULES §4.4）。
 

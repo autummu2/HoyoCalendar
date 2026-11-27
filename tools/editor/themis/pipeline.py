@@ -153,6 +153,13 @@ def collect(news_posts: list[dict], version_posts: list[dict], body_of,
             "post_id": post_id,
         })
         _note(subject, "候选", f"{start} ~ {end}", etype)
+        # 生日活动预告把卡池写在同一篇里；整体已是卡池的帖子不拆（见 parse）
+        if etype != "卡池":
+            for card in parse.find_embedded_banners(text):
+                card.update({"images": images, "post_id": post_id})
+                events.append(card)
+                _note(subject, "候选",
+                      f"{card['start_date']} ~ {card['end_date']}（内嵌卡池）", "卡池")
     return _version_events(version_posts, recorded) + _merge(events)
 
 

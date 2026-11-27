@@ -53,6 +53,9 @@ SHOP = load("tea_shop_reprint")
 VOICE = load("tea_voice_call")
 SWEET = load("tea_sweet_shop")
 FEATURE = load("tea_feature_intro")
+# 生日预告：卡池与活动写在同一篇里（2026-11-27 起自动拆出卡池）
+BIRTHDAY_MOYI = load("tea_birthday_preview_moyi")
+BIRTHDAY_XIA = load("tea_birthday_preview")
 BODY = {str(p["post_id"]): p["text"] for p in NEWS}
 POST = {p["subject"]: p for p in NEWS}
 
@@ -340,6 +343,8 @@ EXPECTED = [
     ("「邮轮之旅前音」", "登录福利", "2026-09-24", "2026-10-17"),
     ("夏彦SSR【夏花永隽】限时复刻", "卡池", "2026-09-18", "2026-10-02"),
     ("「岁悦同欢·莫弈篇」", "常规活动", "2026-09-20", "2026-09-29"),
+    # 同一篇生日预告里内嵌的卡池段（2026-11-27 起自动拆出）
+    ("莫弈SSR【挚礼】", "卡池", "2026-09-20", "2026-09-29"),
     # 生日系列复刻：正文通篇女神之影（两段不同时段的卡池），子标题没有任何卡池字样
     ("莫弈生日系列限时复刻", "卡池", "2026-09-17", "2026-09-19"),   # 收不出活动名，后缀照接
     # 生日拼图：主题兜底 + 子标题里的区分后缀（§4.2），与手工那条逐字相同
@@ -361,7 +366,7 @@ EXPECTED = [
 def test_collect():
     evs = pipeline.collect(NEWS, VERSION_POSTS, body_of)
     got = [(e["title"], e["type"], e["start_date"], e["end_date"]) for e in evs]
-    check("候选条数", len(got), 18)
+    check("候选条数", len(got), 19)
     check("候选全表", got, EXPECTED)
 
     # 去重：三篇「岁悦同欢·莫弈篇」合出两条（生日拼图 9/17、生日活动 9/20，两条名字
@@ -371,10 +376,14 @@ def test_collect():
 
     # 漏斗记账：候选 / 丢弃 / 排除各自有据（日志与 dry-run 都靠 DECISIONS）
     v = [d["verdict"] for d in pipeline.DECISIONS]
-    check("判定表条数", len(v), 31)
-    check("候选 + 丢弃 + 排除 == 过闸条数",
-          v.count("候选") + v.count("丢弃") + v.count("排除"), 31)
-    check("候选条数", v.count("候选"), 19)   # 19 条候选，其中 1 组被 _merge 并成 1 条（→ 18）
+    check("判定表条数", len(v), 32)   # 31 篇帖子 + 1 条内嵌卡池
+    check("判定表覆盖过闸条数",
+          len({d["subject"] for d in pipeline.DECISIONS}), 31)
+    check("候选 + 丢弃 + 排除 覆盖过闸条数",
+          len({d["subject"] for d in pipeline.DECISIONS
+               if d["verdict"] in ("候选", "丢弃", "排除")}), 31)
+    # 20 条候选 note（19 篇帖子 + 1 条内嵌卡池），其中 1 组被 _merge 并成 1 条（→ 19 条）
+    check("候选条数", v.count("候选"), 20)
     # 日志的「跳过（日期不完整）」只报「丢弃」那一类。判据主动排除的（语音电话 / 礼包复刻）
     # 必须落在「排除」上，否则会混进日期缺口栏——另三端从不报判据主动排除的东西
     check("排除的 why 必是那两条判据",
@@ -515,10 +524,36 @@ def test_matches_existing():
               keys.find_duplicate(e, existing, GAME) is not None, True)
 
 
+def test_embedded_banners():
+    """生日预告里的卡池段：按 ✨ 分段 + 概率UP + 完整时段 + 角色/稀有度。"""
+    check("夏彦生日预告拆出卡池",
+          [(c["title"], c["start_date"], c["end_date"])
+           for c in parse.find_embedded_banners(BIRTHDAY_XIA["text"])],
+          [("夏彦SSR【于彼朝阳】", "2026-11-27", "2026-12-06")])
+    check("莫弈生日预告拆出卡池",
+          [(c["title"], c["start_date"], c["end_date"])
+           for c in parse.find_embedded_banners(BIRTHDAY_MOYI["text"])],
+          [("莫弈SSR【挚礼】", "2026-09-20", "2026-09-29")])
+    # 普通福利预告没有 概率UP 段 → 不产卡池；卡池段落没有完整时段也不产
+    check("无概率UP段不产卡池", parse.find_embedded_banners(SWEET["text"]), [])
+    check("无完整时段不产卡池",
+          parse.find_embedded_banners("✨活动限定SSR开放获取&概率UP 夏彦SSR【于彼朝阳】概率提升"),
+          [])
+
+    body = {str(BIRTHDAY_XIA["post_id"]): BIRTHDAY_XIA["text"]}
+    posts = [{"post_id": BIRTHDAY_XIA["post_id"],
+              "subject": BIRTHDAY_XIA["subject"],
+              "created_at": BIRTHDAY_XIA["created_at"]}]
+    evs = pipeline.collect(posts, [], lambda pid: (body.get(str(pid), ""), []))
+    check("同一篇预告产出活动与卡池",
+          {(e["title"], e["type"]) for e in evs},
+          {("「岁悦同欢·夏彦篇」", "常规活动"), ("夏彦SSR【于彼朝阳】", "卡池")})
+
+
 def main():
     for fn in (test_title_skip, test_period, test_classify, test_titles, test_is_reprint,
-               test_tags, test_version_notes, test_collect, test_pre_screen,
-               test_identity, test_matches_existing):
+               test_tags, test_version_notes, test_embedded_banners, test_collect,
+               test_pre_screen, test_identity, test_matches_existing):
         fn()
 
     if _FAILS:
