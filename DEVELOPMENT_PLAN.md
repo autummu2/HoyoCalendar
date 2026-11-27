@@ -158,7 +158,7 @@ HoyoCalendar
 
 ### 4.3 远期规划
 
-- ~~定时自动抓取公告 + 自动生成数据 PR~~（2026-11-16 已实现：GitHub Actions 每日运行，直接提交 `develop` 并快进 `main`，不经过 PR，见 §6.9）
+- ~~定时自动抓取公告 + 自动生成数据 PR~~（2026-11-16 已实现；2026-11-27 起因 B站 封禁托管 runner IP，改为本机脚本链每日约 16:00 运行，直接提交 `develop` 并快进 `main`，见 §6.9）
 - 多数据源（HoYoLAB、B站）支持
 - 活动推送通知
 - 国际化（多语言）
@@ -511,14 +511,15 @@ B站官号动态 ──┴─→ 前瞻直播日期 + 下版的版本名
 | B站官号 | space.bilibili.com/... | 版本PV、活动预告 | ⭐⭐⭐ (视频) |
 | 游戏内公告 | API抓取 | 最准确的活动信息 | ⭐⭐⭐⭐ (需逆向) |
 
-### 6.9 自动维护定时任务（GitHub Actions，2026-11-16）
+### 6.9 自动维护定时任务（本机脚本链，2026-11-27 起）
 
-- **调度**：`.github/workflows/maintain.yml` 每天 `02:30 UTC`（北京时间 10:30）在 `macos-latest` 上运行 `tools/editor/maintain.py`（2026-11-27 从 ubuntu 切到 macOS：Azure Ubuntu 地址池被 B站 连续 10 天 `-412` 封禁，带 `BILI_SESSDATA` 也不解封）；支持 `workflow_dispatch` 手动触发，`dry_run` 只运行不提交。`schedule` 只认默认分支上的 workflow 文件，所以本文件需先合并到 `main`。
-- **提交与部署**：`data/events/` 有 diff 才提交 `data: 自动维护 YYYY-MM-DD` 到 `develop`，随后 `--ff-only` 快进 `main`，由 Vercel 自动部署；无变更不产生空提交。
-- **健康判据**：某游戏抛异常时 `maintain.py` 退出码非零，后续提交步骤不执行、任务标红；米游社正文风控（`retcode 1034`）、公告列表失败、B站动态为空都只记 `::warning::`，不中断维护（符合既有约定）。列表与动态此前静默返回 `[]`，表现为「四个计数器全 0」，2026-11-16 起会打印 `== 公告列表 == 失败` / `== B站动态 == 空`。
-- **环境**：`TZ=Asia/Shanghai`——缓存 TTL、校准 30 天窗口、B站时间戳转日期、日期推断都按本地日期；`tools/editor/.cache` 用 Actions 缓存跨运行保留；日志上传 artifact，保留 14 天。
-- **凭据**：`BILI_SESSDATA` 配在仓库 Actions Secrets（实测定时 runner 匿名访问 B站 连续 10 天 `-412`），只注入「运行 maintain.py」这一步；`common/credentials.py` 环境变量优先，Windows 上再读注册表。米游社暂用匿名（列表基本可用，偶发超时），secret 缺失或为空时自动退回匿名。
-- **已知限制**：数据中心 IP 的匿名请求比家庭宽带更容易触发米游社 1034 / B站 `-352`，只能实测确认；首轮冷缓存请求量最大。
+- **调度**：本机脚本链工具每天约 16:00（北京时间）调用 `tools/editor/maintain_and_push.bat`：先 `maintain.py` 提取/校准，成功后 `push_data.py` 提交 `data/events/` 到 `develop`，再 `--ff-only` 快进 `main`，由 Vercel 自动部署。
+- **为什么不用 GitHub Actions 定时**：托管 runner（Ubuntu 和 macOS 都实测）访问 B站 连续 `-412 request was banned`，属于 IP 级封禁，带 `BILI_SESSDATA` 也不解封；同时 Actions 的 cron 实测延迟约 8 小时（配置 10:30，实际落在 18:00–21:00）。本机家庭 IP 两个问题都不存在。
+- **Actions 保留手动触发**：`.github/workflows/maintain.yml` 已删除 `schedule`，只留 `workflow_dispatch`，用于在 GitHub 侧补米游社数据；`dry_run` 语义不变。
+- **凭据**：本机从注册表 `HKCU\Environment` 读取（`BILI_SESSDATA` 已有；`MIYOUSHE_COOKIE` 未配置，米游社匿名），不再需要 GitHub Secrets；之前添加的 `BILI_SESSDATA` secret 可以删除。
+- **失败处理**：某游戏抛异常时 `maintain.py` 退出码非零，`push_data.py` 不执行；工作区有非数据文件改动时 `push_data.py` 拒绝推送并记入 `logs\push.log`；风控只告警、不中断维护。
+- **缓存**：`tools/editor/.cache` 在本机持久保留；Actions 手动运行仍使用 `actions/cache`。
+- **已知限制**：调用时电脑需处于开机状态；日志在 `tools/editor/logs/`，没有 Actions 那样的页面提示。
 
 ---
 
@@ -804,8 +805,8 @@ HoyoCalendar/
 | 官方公告格式频繁变动 | 🟡 中 | 多数据源冗余获取，出错时降级为手动。**已知未处理格式：三段式复合活动**（正文无 `〓活动时间〓`、改用带空格的 `〓 子活动名 〓` 分段，各段自带 `活动时间：`），实例「虹旅藏金·耀星烁熠」。这类条目被日期闸丢弃并在日志报出，需人工补录 |
 | 抓取瞬时失败导致本轮漏条目 | 🟢 低 | 只新增 + 幂等，漏的条目下次成功运行会自动补上，不会写坏数据 |
 | 米游社正文接口风控（`retcode 1034`） | 🟡 中 | 公告列表不受影响，正文大面积抓不到 → 被日期闸丢弃 → 本轮报「0 新增」，是**假阴性**（易被误当成「今天没有新活动」）。**治本：已落盘条目不抓正文**（`genshin/pipeline._needs_body` 用同一套去重预筛，请求数 20 → 稳态 0~2，根因是请求数）；**可观测：运行日志如实记录**抓取成败、风控计数、跳过正文数，供无人值守后人工核查。反复重跑会加重，勿硬刚，遇风控等冷却 |
-| **数据中心 IP 匿名抓取更易被风控**（2026-11-16） | 🟡 中 | GitHub Actions 是 Azure IP，未配置 Secrets 时米游社 1034 / B站 `-352` 的概率高于家庭宽带，只能实测。workflow 对 1034 只告警不阻断；若长期大面积失败，加 Secrets（`common/credentials.py` 已支持）或回退本机运行 |
-| **Actions 首轮冷缓存放大请求量**（2026-11-16） | 🟢 低 | `tools/editor/.cache` 被 gitignore，新 runner 没有历史正文，首轮请求数最多、最易触发风控。`actions/cache` 跨运行保留；先 `dry_run` 预热一轮再开 schedule |
+| ~~数据中心 IP 匿名抓取更易被风控~~（2026-11-27 已处理） | ✅ 已解决 | 实测 GitHub 托管 runner 无论 Ubuntu 还是 macOS，访问 B站 都是 `-412 request was banned`；配了 `BILI_SESSDATA`（确认已注入、本机可用）仍不解封，属 IP 级封禁。**已回退本机脚本链**（家庭 IP，每天约 16:00），Actions 只保留手动触发，见 §6.9 |
+| **Actions 手动运行仍是冷缓存**（2026-11-16，范围缩小） | 🟢 低 | 定时已回本机，`.cache` 在本机持久保留；仅 `workflow_dispatch` 手动运行仍从冷缓存开始，走 `actions/cache`，影响可接受 |
 | ~~绝区零存量数据待订正 10 条~~（2026-09-21 已订正） | ✅ 已解决 | 绝区零管线落地时用真实公告反查出既有手工数据的错误：6 条结束日漏减一天、2 条类型应为 `登录福利`、1 条高难结束日重叠、版本更新 3.1 的标题格式不统一。清单与依据见 `tools/editor/zenless/PLAN.md` §6.2。**这 10 条里没有一条能被校准自动修好**（`calibrate` 只覆盖 5 个类型、只处理 30 天窗口内、且类型本身不参与校准），所以全部手工落盘。id 保持不变（前端用 id 追踪「已完成」，改 id 会清掉标记；且去重主键不含 id，保留无副作用） |
 | ~~绝区零总纲内、公告未发的活动会晚几天进日历~~（2026-09-21 已解决） | ✅ 已解决 | 「先按总纲落默认类型、等公告到了订正类型」所缺的那条订正通道 2026-09-21 补上了：`calibrate.correct_from_candidates` 按标题订正类型并补全 `pending` 条目。**已实盘跑通**：数据文件 45 → 48 条，新增的正是方案预测的那三条（含 3.1 那条已结束的「回归丽都 羽落重逢」）。方案与离线验证见 `zenless/PLAN.md` §1.2 |
 | **`pending` 条目的类型/配色要等它自己的公告**（2026-09-21） | 🟢 低 | 从总纲落盘的条目带 `pending` 标记，缺配色。标记会让预筛（`keys.likely_recorded`）**必抓正文**，公告到了自动补齐并清标记。代价是该活动公告还在抓取窗口里时，每轮多一次请求；公告翻页刷出窗口后不再请求。若该活动的公告始终不存在（如「回归丽都 羽落重逢」实测没找到），则一直是默认类型 + 兜底配色，需人工订正 |
