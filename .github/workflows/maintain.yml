@@ -51,7 +51,10 @@ jobs:
         env:
           # 可选凭据：缺失时自动退回匿名（见 common/credentials.py）
           BILI_SESSDATA: ${{ secrets.BILI_SESSDATA }}
-        run: python tools/editor/maintain.py
+        run: |
+          # 只打印长度，用于确认 secret 是否完整注入（正常值 222 字符）
+          echo "BILI_SESSDATA length: ${#BILI_SESSDATA}"
+          python tools/editor/maintain.py
 
       - name: Summarize run
         if: always()
