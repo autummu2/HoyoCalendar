@@ -48,6 +48,9 @@ jobs:
 
       - name: Run maintenance
         id: run
+        env:
+          # 可选凭据：缺失时自动退回匿名（见 common/credentials.py）
+          BILI_SESSDATA: ${{ secrets.BILI_SESSDATA }}
         run: python tools/editor/maintain.py
 
       - name: Summarize run

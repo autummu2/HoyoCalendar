@@ -517,7 +517,7 @@ B站官号动态 ──┴─→ 前瞻直播日期 + 下版的版本名
 - **提交与部署**：`data/events/` 有 diff 才提交 `data: 自动维护 YYYY-MM-DD` 到 `develop`，随后 `--ff-only` 快进 `main`，由 Vercel 自动部署；无变更不产生空提交。
 - **健康判据**：某游戏抛异常时 `maintain.py` 退出码非零，后续提交步骤不执行、任务标红；米游社正文风控（`retcode 1034`）、公告列表失败、B站动态为空都只记 `::warning::`，不中断维护（符合既有约定）。列表与动态此前静默返回 `[]`，表现为「四个计数器全 0」，2026-11-16 起会打印 `== 公告列表 == 失败` / `== B站动态 == 空`。
 - **环境**：`TZ=Asia/Shanghai`——缓存 TTL、校准 30 天窗口、B站时间戳转日期、日期推断都按本地日期；`tools/editor/.cache` 用 Actions 缓存跨运行保留；日志上传 artifact，保留 14 天。
-- **凭据**：暂不配置 Secrets（匿名请求）。`common/credentials.py` 环境变量优先，Windows 上再读注册表；将来要加 Secrets 只需在 workflow 里加 `env:`，不用改代码。
+- **凭据**：`BILI_SESSDATA` 配在仓库 Actions Secrets（实测定时 runner 匿名访问 B站 连续 10 天 `-412`），只注入「运行 maintain.py」这一步；`common/credentials.py` 环境变量优先，Windows 上再读注册表。米游社暂用匿名（列表基本可用，偶发超时），secret 缺失或为空时自动退回匿名。
 - **已知限制**：数据中心 IP 的匿名请求比家庭宽带更容易触发米游社 1034 / B站 `-352`，只能实测确认；首轮冷缓存请求量最大。
 
 ---
