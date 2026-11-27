@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   maintain:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 45
     env:
       TZ: Asia/Shanghai      # 缓存 TTL / 校准窗口 / 日期推断都按本地日期

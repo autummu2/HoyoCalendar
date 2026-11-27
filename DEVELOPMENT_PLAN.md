@@ -513,7 +513,7 @@ B站官号动态 ──┴─→ 前瞻直播日期 + 下版的版本名
 
 ### 6.9 自动维护定时任务（GitHub Actions，2026-11-16）
 
-- **调度**：`.github/workflows/maintain.yml` 每天 `02:30 UTC`（北京时间 10:30）在 `ubuntu-latest` 上运行 `tools/editor/maintain.py`；支持 `workflow_dispatch` 手动触发，`dry_run` 只运行不提交。`schedule` 只认默认分支上的 workflow 文件，所以本文件需先合并到 `main`。
+- **调度**：`.github/workflows/maintain.yml` 每天 `02:30 UTC`（北京时间 10:30）在 `macos-latest` 上运行 `tools/editor/maintain.py`（2026-11-27 从 ubuntu 切到 macOS：Azure Ubuntu 地址池被 B站 连续 10 天 `-412` 封禁，带 `BILI_SESSDATA` 也不解封）；支持 `workflow_dispatch` 手动触发，`dry_run` 只运行不提交。`schedule` 只认默认分支上的 workflow 文件，所以本文件需先合并到 `main`。
 - **提交与部署**：`data/events/` 有 diff 才提交 `data: 自动维护 YYYY-MM-DD` 到 `develop`，随后 `--ff-only` 快进 `main`，由 Vercel 自动部署；无变更不产生空提交。
 - **健康判据**：某游戏抛异常时 `maintain.py` 退出码非零，后续提交步骤不执行、任务标红；米游社正文风控（`retcode 1034`）、公告列表失败、B站动态为空都只记 `::warning::`，不中断维护（符合既有约定）。列表与动态此前静默返回 `[]`，表现为「四个计数器全 0」，2026-11-16 起会打印 `== 公告列表 == 失败` / `== B站动态 == 空`。
 - **环境**：`TZ=Asia/Shanghai`——缓存 TTL、校准 30 天窗口、B站时间戳转日期、日期推断都按本地日期；`tools/editor/.cache` 用 Actions 缓存跨运行保留；日志上传 artifact，保留 14 天。
