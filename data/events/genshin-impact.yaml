@@ -744,6 +744,7 @@
   end_date: '2026-12-15'
   color: '#ecd8bf'
   source_url: https://www.miyoushe.com/ys/article/79660850
+  calibrated: B站总览
 - id: gi-卡池-2026-11-华黍由仪祈愿驹隙
   game: genshin-impact
   title: 「华黍由仪」祈愿：「驹隙隐泉·兹白(岩)」概率UP
@@ -752,6 +753,7 @@
   end_date: '2026-12-15'
   color: '#dbd9d0'
   source_url: https://www.miyoushe.com/ys/article/79660849
+  calibrated: B站总览
 - id: gi-卡池-2026-11-炎天铸名祈愿集录
   game: genshin-impact
   title: 「炎天铸名」祈愿：集录祈愿开启
